@@ -1,16 +1,26 @@
-import secrets
-from typing import List
+from typing import List, Annotated
 
-from pydantic_settings import BaseSettings
-from pydantic import EmailStr, MongoDsn
+from pydantic import UrlConstraints
+from pydantic_core import MultiHostUrl
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from src import __version__
 
 # This adds support for 'mongodb+srv' connection schemas when using e.g. MongoDB Atlas
-MongoDsn.allowed_schemes.add("mongodb+srv")
+MongoDsn = Annotated[
+    MultiHostUrl,
+    UrlConstraints(
+        allowed_schemes=["mongodb", "mongodb+srv"],
+        default_port=27017,
+    ),
+]
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file='.env', env_file_encoding='utf-8', case_sensitive=True, extra='allow'
+    )
+
     # Application
     PROJECT_NAME: str = "support_service"
     PROJECT_VERSION: str = __version__
@@ -28,10 +38,6 @@ class Settings(BaseSettings):
     # MongoDB
     MONGODB_URI: MongoDsn
     MONGODB_DB_NAME: str
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
 
 
 settings = Settings()
