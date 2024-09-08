@@ -1,0 +1,31 @@
+services:
+  mongo:
+    image: mongo
+    env_file:
+      - .env
+    restart: no
+    ports:
+      - "27017:27017"
+    networks:
+      - apsvp
+    volumes:
+      - mongodb-data:/data/db
+
+  mongo-express:
+    image: mongo-express
+    env_file:
+      - .env
+    restart: no
+    ports:
+      - "8081:8081"
+    networks:
+      - apsvp
+
+
+volumes:
+  mongodb-data:
+
+networks:
+  apsvp:
+  gateway:
+    external: true

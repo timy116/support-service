@@ -1,0 +1,30 @@
+services:
+  mongo:
+    image: mongo
+    env_file:
+      - .env
+    restart: no
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+
+  mongo-express:
+    image: mongo-express
+    env_file:
+      - .env
+    restart: no
+    ports:
+      - "8081:8081"
+
+  mailhog:
+    container_name: mailhog
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - main
+
+volumes:
+  mongodb-data:
