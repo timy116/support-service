@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     )
 
     # Application
-    PROJECT_NAME: str = "support_service"
+    PROJECT_NAME: str = "SUPPORT SERVICE"
     PROJECT_VERSION: str = __version__
     API_V1_STR: str = "v1"
     DEBUG: bool = True
