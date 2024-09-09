@@ -1,8 +1,8 @@
 from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from src.app.core.config import settings
-from src.app.models import gather_documents
+from app.core.config import settings
+from app.models import gather_documents
 
 
 async def init() -> None:

@@ -1,4 +1,6 @@
 fastapi
+uvicorn
+orjson
 pydantic-settings
 pandas
 google-auth-oauthlib

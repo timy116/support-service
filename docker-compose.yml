@@ -1,21 +1,45 @@
 services:
   mongo:
     image: mongo
+    container_name: mongo
     env_file:
       - .env
     restart: no
     ports:
       - "27017:27017"
+    networks:
+      - main
     volumes:
       - mongodb-data:/data/db
 
   mongo-express:
     image: mongo-express
+    container_name: mongo-express
     env_file:
       - .env
     restart: no
     ports:
       - "8081:8081"
+    networks:
+      - main
+    depends_on:
+      - mongo
+
+  support-service:
+    build:
+      context: .
+    container_name: support-service
+    volumes:
+      - ./src:/code
+    env_file:
+      - .env
+    restart: no
+    ports:
+      - "8000:8000"
+    networks:
+      - main
+    depends_on:
+      - mongo
 
   mailhog:
     container_name: mailhog
@@ -28,3 +52,7 @@ services:
 
 volumes:
   mongodb-data:
+
+networks:
+  main:
+    driver: bridge

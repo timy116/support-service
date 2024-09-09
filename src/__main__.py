@@ -1,12 +1,12 @@
 import uvicorn
 
-from src.app.core.config import settings
+from app.core.config import settings
 
 
 def run_dev_server() -> None:
     """Run the uvicorn server in development environment."""
     uvicorn.run(
-        "src.app.main:app",  # path to the ASGI application
+        "app.main:app",  # path to the ASGI application
         host=settings.UVICORN_HOST,
         port=settings.UVICORN_PORT,
         reload=settings.DEBUG,

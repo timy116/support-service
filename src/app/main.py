@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from http import HTTPStatus
 from typing import Set
@@ -8,9 +9,9 @@ from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from src.app import api
-from src.app.core.config import settings
-from src.app.db import init_db
+from app import api
+from app.core.config import settings
+from app.db import init_db
 
 
 @asynccontextmanager
@@ -49,7 +50,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.mount("/static", StaticFiles(directory="src/app/static"), name="static")
+static_dir = os.environ.get('STATIC_DIR', 'src/app/static')
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Add the router responsible for all /api/ endpoint requests
 app.include_router(api.router)

@@ -4,8 +4,6 @@ from pydantic import UrlConstraints
 from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from src import __version__
-
 # This adds support for 'mongodb+srv' connection schemas when using e.g. MongoDB Atlas
 MongoDsn = Annotated[
     MultiHostUrl,
@@ -23,7 +21,7 @@ class Settings(BaseSettings):
 
     # Application
     PROJECT_NAME: str = "SUPPORT SERVICE"
-    PROJECT_VERSION: str = __version__
+    PROJECT_VERSION: str = "0.1.0"
     API_V1_STR: str = "v1"
     DEBUG: bool = True
 
