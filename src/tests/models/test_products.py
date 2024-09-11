@@ -95,9 +95,21 @@ class TestDailyReport(IsolatedAsyncioTestCase):
 
         assert len(reports) == 1
 
+        # Test date range
+        reports = await DailyReport.find_many(DailyReport.date <= get_date().replace(day=10)).to_list()
+
+        assert len(reports) == 2
+
+        reports = await DailyReport.find_many(
+            DailyReport.date > get_date().replace(day=5),
+            DailyReport.date <= get_date()
+        ).to_list()
+
+        assert len(reports) == 2
+
     @pytest.mark.asyncio
     async def test_update_instance_from_db(self):
-        date = get_date()
+        await DailyReport.find_one({"date": self.date})
         report = await DailyReport.find_one({"category": "漁產", "source": "批發"})
         report.source = "產地"
         await report.save()
