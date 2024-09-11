@@ -22,8 +22,8 @@ async def lifespan(application: FastAPI):
 
 tags_metadata = [
     {
-        "name": "Fruits Origin Products",
-        "description": "The daily report of fruits origin products send by the AFA(Agricultural Food Agency).",
+        "name": "Daily Reports",
+        "description": "The daily report send by the AFA(Agricultural Food Agency).",
     },
 ]
 
