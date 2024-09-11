@@ -6,6 +6,7 @@ from mongomock_motor import AsyncMongoMockClient
 
 from app.models.utils import get_date
 from src.app.models.daily_reports import DailyReport, Product
+from src.app.core.enums import Category, SupplyType, ProductType
 
 
 class TestDailyReport(IsolatedAsyncioTestCase):
@@ -23,8 +24,9 @@ class TestDailyReport(IsolatedAsyncioTestCase):
         reports = [
             DailyReport(
                 date=self.date,
-                category="水果",
-                source="產地",
+                category=Category.AGRICULTURE,
+                supply_type=SupplyType.ORIGIN,
+                product_type=ProductType.FRUIT,
                 products=[
                     Product(product_name="香蕉", average_price=10.0),
                     Product(product_name="芒果", average_price=15.3)
@@ -32,8 +34,9 @@ class TestDailyReport(IsolatedAsyncioTestCase):
             ),
             DailyReport(
                 date=self.date,
-                category="水果",
-                source="批發",
+                category=Category.AGRICULTURE,
+                supply_type=SupplyType.WHOLESALE,
+                product_type=ProductType.FRUIT,
                 products=[
                     Product(product_name="香蕉", average_price=10.0),
                     Product(product_name="芒果", average_price=15.3)
@@ -41,19 +44,19 @@ class TestDailyReport(IsolatedAsyncioTestCase):
             ),
             DailyReport(
                 date=self.date.replace(day=5),
-                category="漁產",
-                source="產地",
+                category=Category.FISHERY,
+                supply_type=SupplyType.ORIGIN,
+                product_type=ProductType.FISH,
                 products=[
                     Product(product_name="吳郭魚", average_price=30.5),
-                    Product(product_name="白蝦", average_price=100.3)
                 ]
             ),
             DailyReport(
                 date=self.date.replace(day=5),
-                category="漁產",
-                source="批發",
+                category=Category.FISHERY,
+                supply_type=SupplyType.WHOLESALE,
+                product_type=ProductType.SHRIMP,
                 products=[
-                    Product(product_name="吳郭魚", average_price=30.5),
                     Product(product_name="白蝦", average_price=100.3)
                 ]
             ),
@@ -67,8 +70,9 @@ class TestDailyReport(IsolatedAsyncioTestCase):
 
         report = DailyReport(
             date=date.replace(day=10),
-            category="水果",
-            source="產地",
+            category=Category.AGRICULTURE,
+            supply_type=SupplyType.ORIGIN,
+            product_type=ProductType.FRUIT,
             products=[
                 Product(product_name="香蕉", average_price=10.0),
                 Product(product_name="芒果", average_price=15.3)
@@ -86,12 +90,15 @@ class TestDailyReport(IsolatedAsyncioTestCase):
 
         assert len(reports) == 2
 
-        reports = await DailyReport.find_many({"source": "批發"}).to_list()
+        reports = await DailyReport.find_many({"supply_type": SupplyType.WHOLESALE}).to_list()
 
         assert len(reports) == 2
-        assert reports[0].category == "水果"
+        assert reports[0].product_type == ProductType.FRUIT
 
-        reports = await DailyReport.find_many({"category": "漁產", "source": "批發"}).to_list()
+        reports = await DailyReport.find_many({
+            "category": Category.FISHERY,
+            "supply_type": SupplyType.WHOLESALE
+        }).to_list()
 
         assert len(reports) == 1
 
@@ -110,8 +117,11 @@ class TestDailyReport(IsolatedAsyncioTestCase):
     @pytest.mark.asyncio
     async def test_update_instance_from_db(self):
         await DailyReport.find_one({"date": self.date})
-        report = await DailyReport.find_one({"category": "漁產", "source": "批發"})
-        report.source = "產地"
+        report = await DailyReport.find_one({
+            "category": Category.FISHERY,
+            "supply_type": SupplyType.WHOLESALE
+        })
+        report.supply_type = SupplyType.ORIGIN
         await report.save()
 
         report = await DailyReport.find_one({"_id": report.id})
@@ -120,8 +130,14 @@ class TestDailyReport(IsolatedAsyncioTestCase):
 
     @pytest.mark.asyncio
     async def test_delete_instance_from_db(self):
-        report = await DailyReport.find_one({"category": "漁產", "source": "批發"})
+        report = await DailyReport.find_one({
+            "category": Category.FISHERY,
+            "supply_type": SupplyType.WHOLESALE
+        })
         await report.delete()
 
-        report = await DailyReport.find_one({"category": "漁產", "source": "批發"})
+        report = await DailyReport.find_one({
+            "category": Category.FISHERY,
+            "supply_type": SupplyType.WHOLESALE
+        })
         assert report is None
