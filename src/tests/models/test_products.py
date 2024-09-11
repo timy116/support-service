@@ -97,12 +97,16 @@ class TestDailyReport(IsolatedAsyncioTestCase):
 
     @pytest.mark.asyncio
     async def test_update_instance_from_db(self):
+        date = get_datetime_utc_8()
         report = await DailyReport.find_one({"category": "漁產", "source": "批發"})
         report.source = "產地"
         await report.save()
+        await DailyReport.find_one({"_id": report.id}).set({"updated_at": date})
 
-        report = await DailyReport.find_one({"category": "漁產", "source": "產地"})
+        report = await DailyReport.find_one({"_id": report.id})
         assert report is not None
+        assert report.updated_at is not None
+        assert report.updated_at.date() == date.date()
 
     @pytest.mark.asyncio
     async def test_delete_instance_from_db(self):
