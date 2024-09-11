@@ -4,8 +4,8 @@ import pytest
 from beanie import init_beanie
 from mongomock_motor import AsyncMongoMockClient
 
+from app.models.utils import get_date
 from src.app.models.daily_reports import DailyReport, Product
-from src.app.models.utils import get_datetime_utc_8
 
 
 class TestDailyReport(IsolatedAsyncioTestCase):
@@ -18,7 +18,7 @@ class TestDailyReport(IsolatedAsyncioTestCase):
         await self.create_data()
 
     async def create_data(self):
-        self.date = get_datetime_utc_8()
+        self.date = get_date()
 
         reports = [
             DailyReport(
@@ -63,7 +63,7 @@ class TestDailyReport(IsolatedAsyncioTestCase):
 
     @pytest.mark.asyncio
     async def test_insert_single_instance_into_db(self):
-        date = get_datetime_utc_8()
+        date = get_date()
 
         report = DailyReport(
             date=date.replace(day=10),
@@ -97,16 +97,14 @@ class TestDailyReport(IsolatedAsyncioTestCase):
 
     @pytest.mark.asyncio
     async def test_update_instance_from_db(self):
-        date = get_datetime_utc_8()
+        date = get_date()
         report = await DailyReport.find_one({"category": "漁產", "source": "批發"})
         report.source = "產地"
         await report.save()
-        await DailyReport.find_one({"_id": report.id}).set({"updated_at": date})
 
         report = await DailyReport.find_one({"_id": report.id})
         assert report is not None
         assert report.updated_at is not None
-        assert report.updated_at.date() == date.date()
 
     @pytest.mark.asyncio
     async def test_delete_instance_from_db(self):

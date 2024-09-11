@@ -1,8 +1,12 @@
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional
 
-from beanie import Document, Indexed
+from beanie import Document, Indexed, WriteRules
+from beanie.odm.documents import DocType
 from pydantic import BaseModel, ConfigDict
+from pymongo.client_session import ClientSession
+
+from app.models.utils import get_datetime_utc_8
 
 
 class Product(BaseModel):
@@ -11,15 +15,16 @@ class Product(BaseModel):
 
 
 class DailyReport(Document):
-    date: Indexed(datetime)
+    date: Indexed(date)
     category: Indexed(str)
     source: Indexed(str)
     products: list[Product]
+    created_at: datetime = get_datetime_utc_8()
     updated_at: Optional[datetime] = None
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "date": "2024-09-11 09:16:52.864443+08:00",
+                "date": "2024-09-11",
                 "category": "水果",
                 "source": "產地",
                 "products": [
@@ -39,3 +44,8 @@ class DailyReport(Document):
     class Settings:
         name = "daily_reports"
         indexes = ["date", "category", "source"]
+
+    async def save(self: DocType, session: Optional[ClientSession] = None,
+                   link_rule: WriteRules = WriteRules.DO_NOTHING, ignore_revision: bool = False, **kwargs) -> DocType:
+        self.updated_at = get_datetime_utc_8()
+        return await super().save(session, link_rule, ignore_revision, **kwargs)
