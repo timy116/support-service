@@ -47,3 +47,18 @@ class LogLevel(BaseEnum):
     WARNING = "WARNING"
     ERROR = "ERROR"
     CRITICAL = "CRITICAL"
+
+
+class FileTypes(BaseEnum):
+    CSV = "csv"
+    JSON = "json"
+    EXCEL = "excel"
+    PDF = "pdf"
+    TXT = "txt"
+
+
+class GmailScopes(BaseEnum):
+    READ_ONLY= "https://www.googleapis.com/auth/gmail.readonly"
+    SEND = "https://www.googleapis.com/auth/gmail.send"
+    MODIFY = "https://www.googleapis.com/auth/gmail.modify"
+    FULL = "https://mail.google.com/"
