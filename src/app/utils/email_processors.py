@@ -14,7 +14,6 @@ from pydantic import BaseModel
 from app.core.enums import GmailScopes, FileTypes
 from app.utils.file_processors import DocumentProcessor
 
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CREDENTIAL_DIR = os.path.join(BASE_DIR, 'credentials')
 
@@ -73,25 +72,18 @@ class GmailSearcher(EmailSearcher):
 
         for message in messages:
             msg = self.service.users().messages().get(userId='me', id=message['id']).execute()
+            email = {
+                'id': msg['id'],
+                'subject': next(header['value'] for header in msg['payload']['headers'] if header['name'] == 'Subject')
+            }
 
             if file_type is not None:
-                email = {
-                    'id': msg['id'],
-                    'subject': next(
-                        header['value'] for header in msg['payload']['headers'] if header['name'] == 'Subject'
-                    ),
-                    'has_file': any(
-                        part['filename'].lower().endswith(f'.{file_type}')
-                        for part in msg['payload'].get('parts', [])
-                        if 'filename' in part
-                    )
-                }
-            else:
-                email = {
-                    'id': msg['id'],
-                    'subject': next(
-                        header['value'] for header in msg['payload']['headers'] if header['name'] == 'Subject')
-                }
+                email['has_file'] = any(
+                    part['filename'].lower().endswith(f'.{file_type}')
+                    for part in msg['payload'].get('parts', [])
+                    if 'filename' in part
+                )
+
             emails.append(email)
 
         return emails
@@ -111,7 +103,7 @@ class GmailEmailProcessor(EmailProcessor):
             file_content = None
 
             if email.get('has_file'):
-                file_content = self._process_file_attachment(email['id'])
+                file_content = self._process_file_attachment(email['id'], keyword)
             results.append({
                 'subject': email['subject'],
                 'file_content': file_content
@@ -119,7 +111,7 @@ class GmailEmailProcessor(EmailProcessor):
 
         return results
 
-    def _process_file_attachment(self, email_id: str) -> Union[str, None]:
+    def _process_file_attachment(self, email_id: str, keyword: str) -> Union[str, None]:
         message = self.service.users().messages().get(userId='me', id=email_id).execute()
 
         for part in message['payload'].get('parts', []):
@@ -133,7 +125,9 @@ class GmailEmailProcessor(EmailProcessor):
                 file_data = base64.urlsafe_b64decode(attachment['data'].encode('UTF-8'))
 
                 with tempfile.NamedTemporaryFile(
-                        delete=False, suffix=f'.{self.document_processor.file_type}'
+                        delete=False,
+                        prefix=f'{keyword}_',
+                        suffix=f'.{self.document_processor.file_type}'
                 ) as temp_file:
                     temp_file.write(file_data)
                     temp_file_path = temp_file.name
