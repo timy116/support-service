@@ -24,7 +24,18 @@ services:
       - main
     depends_on:
       - mongo
-
+  redis:
+    image: redis:alpine
+    container_name: support-service-redis
+    restart: no
+    ports:
+      - "6379:6379"
+    expose:
+      - "6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - main
   support-service:
     build:
       context: .
@@ -52,6 +63,7 @@ services:
 
 volumes:
   mongodb-data:
+  redis-data:
 
 networks:
   main:

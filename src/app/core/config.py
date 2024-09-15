@@ -37,5 +37,8 @@ class Settings(BaseSettings):
     MONGODB_URI: MongoDsn
     MONGODB_DB_NAME: str
 
+    # Redis
+    REDIS_URI: str
+
 
 settings = Settings()
