@@ -4,12 +4,12 @@ services:
     env_file:
       - .env
     restart: no
-    ports:
-      - "27017:27017"
+    expose:
+      - "27017"
     networks:
-      - apsvp
+      - support-service
     volumes:
-      - mongodb-data:/data/db
+      - support-service-mongodb-data:/data/db
 
   mongo-express:
     image: mongo-express
@@ -19,13 +19,58 @@ services:
     ports:
       - "8081:8081"
     networks:
-      - apsvp
+      - support-service
+
+  redis:
+    image: redis:alpine
+    container_name: support-service-redis
+    restart: no
+    expose:
+      - "6379"
+    volumes:
+      - support-service-redis-data:/data
+    networks:
+      - support-service
+
+  redis-commander:
+    container_name: support-service-redis-commander
+    hostname: redis-commander
+    image: ghcr.io/joeferner/redis-commander:latest
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8086:8081"
+    depends_on:
+      - "redis"
+    networks:
+      - support-service
+
+  support-service:
+    build:
+      context: .
+    container_name: support-service
+    volumes:
+      - ./src:/code
+    env_file:
+      - .env
+    restart: no
+    ports:
+      - "8000:80"
+    expose:
+      - "80"
+    networks:
+      - support-service
+      - gateway
+    depends_on:
+      - mongo
+      - redis
 
 
 volumes:
-  mongodb-data:
+  support-service-mongodb-data:
+  support-service-redis-data:
 
 networks:
-  apsvp:
+  support-service:
   gateway:
     external: true
