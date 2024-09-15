@@ -1,13 +1,11 @@
 import os
 from contextlib import asynccontextmanager
-from http import HTTPStatus
 from typing import Set
 
+import aioredis
 from fastapi import FastAPI, status
-from fastapi.exceptions import RequestValidationError
 from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
-from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import api
 from app.core.config import settings
@@ -17,6 +15,12 @@ from app.db import init_db
 @asynccontextmanager
 async def lifespan(application: FastAPI):
     await init_db.init()
+    application.state.redis_pool = await aioredis.from_url(
+        settings.REDIS_URI,
+        encoding="utf-8",
+        decode_responses=True,
+    )
+
     yield
 
 
