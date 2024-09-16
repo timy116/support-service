@@ -9,7 +9,10 @@ from fastapi.staticfiles import StaticFiles
 
 from app import api
 from app.core.config import settings
+from app.core.enums import FileTypes
 from app.db import init_db
+from app.utils.email_processors import GmailProcessor, GmailDailyReportSearcher
+from app.utils.file_processors import DocumentProcessor
 
 
 @asynccontextmanager
@@ -63,6 +66,9 @@ app.include_router(api.router)
 
 @app.get("/")
 async def root():
+    p = GmailProcessor(DocumentProcessor(FileTypes.PDF), GmailDailyReportSearcher)
+    p.process('113年09月13日敏感性農產品產地價格日報表')
+
     return {"message": "Hello World"}
 
 
