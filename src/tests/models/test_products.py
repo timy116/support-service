@@ -5,8 +5,8 @@ from beanie import init_beanie
 from mongomock_motor import AsyncMongoMockClient
 
 from app.models.utils import get_date
-from src.app.models.daily_reports import DailyReport, Product
-from src.app.core.enums import Category, SupplyType, ProductType
+from app.models.daily_reports import DailyReport, Product
+from app.core.enums import Category, SupplyType, ProductType
 
 
 class TestDailyReport(IsolatedAsyncioTestCase):

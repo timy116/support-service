@@ -9,3 +9,6 @@ google-api-python-client
 motor
 beanie
 pytest
+PyMuPDF
+aioredis
+hiredis[aioredis]
