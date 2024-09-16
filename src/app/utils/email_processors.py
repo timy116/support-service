@@ -4,9 +4,10 @@ import pickle
 import tempfile
 from abc import abstractmethod, ABC
 from os.path import join as path_join
-from typing import List, Union
+from typing import List, Union, Type
 
 from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build, Resource
 from pydantic import BaseModel
@@ -14,39 +15,20 @@ from pydantic import BaseModel
 from app.core.enums import GmailScopes, FileTypes
 from app.utils.file_processors import DocumentProcessor
 
+# Directory and file names
+CREDENTIALS_DIR_NAME = 'credentials'
+TOKEN_FILE_NAME = 'token.pickle'
+CREDENTIALS_JSON_FILE_NAME = 'credentials.json'
+
+# Paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CREDENTIAL_DIR = os.path.join(BASE_DIR, 'credentials')
+CREDENTIAL_DIR = os.path.join(BASE_DIR, CREDENTIALS_DIR_NAME)
 
 # Gmail scopes
 SCOPES = [
     GmailScopes.READ_ONLY,
     GmailScopes.SEND,
 ]
-
-
-def get_gmail_service() -> Resource:
-    creds = None
-    token_path = path_join(CREDENTIAL_DIR, 'token.pickle')
-
-    # Load the previously stored credentials
-    if os.path.exists(token_path):
-        with open(token_path, 'rb') as token:
-            creds = pickle.load(token)
-
-    # if there are no (valid) credentials available, let the user log in
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                path_join(CREDENTIAL_DIR, 'credentials.json'), SCOPES)
-            creds = flow.run_local_server(port=0)
-
-        # save the credentials for the next run
-        with open(token_path, 'wb') as token:
-            pickle.dump(creds, token)
-
-    return build('gmail', 'v1', credentials=creds)
 
 
 class EmailSearcher(ABC):
@@ -65,7 +47,7 @@ class GmailSearcher(EmailSearcher):
     def __init__(self, service: Resource):
         self.service = service
 
-    def search(self, keyword: str, file_type: Union[FileTypes, None] = None) -> List[dict]:
+    def search(self, keyword: str, file_type: Union[FileTypes, None] = None) -> List[dict[str, Union[str, bool]]]:
         results = self.service.users().messages().list(userId='me', q=keyword).execute()
         messages = results.get('messages', [])
         emails = []
@@ -89,11 +71,79 @@ class GmailSearcher(EmailSearcher):
         return emails
 
 
-class GmailEmailProcessor(EmailProcessor):
-    def __init__(self, document_processor: DocumentProcessor):
+class GmailDailyReportSearcher(GmailSearcher):
+
+    def search(self, keyword: str, file_type: Union[FileTypes, None] = None) -> List[dict[str, Union[str, bool]]]:
+        emails = super().search(keyword, file_type)
+
+        if len(emails) > 1:
+            filtered_emails = []
+
+            for email in emails:
+                subject = email['subject']
+
+                if subject == keyword or subject.find(keyword) != -1:
+                    filtered_emails.append(email)
+
+            return filtered_emails
+
+        return emails
+
+
+class GmailProcessor(EmailProcessor):
+    def __init__(
+            self,
+            document_processor: DocumentProcessor,
+            searcher: Union[Type[GmailSearcher], Type[GmailDailyReportSearcher]]
+    ):
         self.document_processor = document_processor
-        self.service = get_gmail_service()
-        self.searcher = GmailSearcher(self.service)
+        self.token_file = path_join(CREDENTIAL_DIR, TOKEN_FILE_NAME)
+        self.credentials_file = path_join(CREDENTIAL_DIR, CREDENTIALS_JSON_FILE_NAME)
+
+        try:
+            self.credentials = self._get_credentials_instance()
+        except Exception as e:
+            # TODO: log or send a notification for the error
+            print(f'Failed to get credentials instance: {e}')
+            raise e
+
+        try:
+            self.service = self._get_gmail_service()
+        except Exception as e:
+            # TODO: log or send a notification for the error
+            print(f'Failed to get Gmail service: {e}')
+            raise e
+
+        self.searcher = searcher(self.service)
+
+    def _get_credentials_instance(self) -> Credentials:
+        if not os.path.exists(self.token_file):
+            raise FileNotFoundError(f'No token file found at {self.token_file}')
+
+        with open(self.token_file, 'rb') as token:
+            creds = pickle.load(token)
+
+            if not isinstance(creds, Credentials):
+                raise TypeError(f'Expected Credentials instance, got {type(creds)}')
+
+        return creds
+    
+    def _get_gmail_service(self) -> Resource:
+        creds = self.credentials
+
+        # if there are no (valid) credentials available, let the user log in
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(self.credentials_file, SCOPES)
+                creds = flow.run_local_server(port=0)
+
+            # save the credentials for the next run
+            with open(self.token_file, 'wb') as token:
+                pickle.dump(creds, token)
+
+        return build('gmail', 'v1', credentials=creds)
 
     def process(self, keyword: str) -> List[dict]:
         emails = self.searcher.search(keyword, self.document_processor.file_type)
@@ -103,11 +153,14 @@ class GmailEmailProcessor(EmailProcessor):
             file_content = None
 
             if email.get('has_file'):
-                file_content = self._process_file_attachment(email['id'], keyword)
+                file_content = self._process_file_attachment(email['id'], email['subject'])
             results.append({
                 'subject': email['subject'],
                 'file_content': file_content
             })
+
+            if isinstance(self.searcher, GmailDailyReportSearcher):
+                break
 
         return results
 
