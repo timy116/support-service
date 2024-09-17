@@ -1,136 +1,114 @@
-import pickle
-from unittest.mock import patch, mock_open
+from unittest.mock import Mock, patch, mock_open, PropertyMock
 
 import pytest
 from google.oauth2.credentials import Credentials
 
-from app.utils.email_processors import GmailProcessor
+from app.utils.email_processors import GmailProcessor, SCOPES
 
 
-# Mock class to simulate the class containing _get_credentials_instance
-class MockGmailProcessorClass:
-    def __init__(self, token_file):
-        self.token_file = token_file
-
-    _get_credentials_instance = GmailProcessor._get_credentials_instance
-
-
-@pytest.mark.parametrize(
-    "token_file_content",
-    [
-        pickle.dumps(Credentials(token='its-a-token-to-everyone')),
-    ],
-    ids=[
-        "valid_credentials",
-    ]
-)
-def test_get_credentials_instance_valid_credentials(token_file_content):
+@patch('pickle.load')
+@patch('app.utils.email_processors.open', new_callable=mock_open, read_data=b"token_file_content")
+@patch('app.utils.email_processors.exists')
+@patch('app.utils.email_processors.GmailSearcher', new_callable=Mock)
+@patch('app.utils.email_processors.DocumentProcessor', new_callable=Mock)
+def test_get_credentials_instance_valid_credentials(
+        mock_document_processor, mock_searcher, mock_path_exists, mock_built_open, mock_pickle_load
+):
     # Arrange
-    token_file_path = 'test_token_file'
-    mock_instance = MockGmailProcessorClass(token_file_path)
-    m_open = mock_open(read_data=token_file_content)
+    creds = Mock(Credentials)
+    processor = GmailProcessor(mock_document_processor, mock_searcher)
+    processor.credentials_file = 'path/to/credentials.json'
+    processor.token_file = 'path/to/token.pickle'
+    mock_path_exists.return_value = True
+    mock_pickle_load.return_value = creds
 
-    with patch('builtins.open', m_open), patch('os.path.exists', return_value=token_file_content is not None):
-        # Act
-        creds = mock_instance._get_credentials_instance()
+    # case 1: valid credentials
+    credentials = processor.credentials
 
-        # Assert
-        assert isinstance(creds, Credentials)
+    # Assert
+    mock_path_exists.assert_called_once_with(processor.token_file)
+    mock_built_open.assert_called_once_with(processor.token_file, 'rb')
+    mock_pickle_load.assert_called_once_with(mock_built_open())
+    assert credentials == creds
+
+    # case 2: token file does not exist
+    processor._credentials = None
+    mock_path_exists.return_value = False
+
+    # Assert
+    with pytest.raises(FileNotFoundError):
+        credentials = processor.credentials
+
+        assert credentials is None
+
+    # case 3: invalid credentials type
+    mock_path_exists.return_value = True
+    mock_pickle_load.return_value = "invalid_data"
+
+    # Assert
+    with pytest.raises(TypeError):
+        credentials = processor.credentials
+
+        assert credentials is None
 
 
-@pytest.mark.parametrize(
-    "token_file_content, expected_exception, expected_message",
-    [
-        # Edge case: token file does not exist
-        (None, FileNotFoundError, 'No token file found at {token_file_path}'),
-    ],
-    ids=[
-        "file_not_found",
-    ]
-)
-def test_get_credentials_instance(token_file_content, expected_exception, expected_message):
+@patch('app.utils.email_processors.GmailSearcher', new_callable=Mock)
+@patch('app.utils.email_processors.DocumentProcessor', new_callable=Mock)
+@patch('app.utils.email_processors.GmailProcessor.credentials', new_callable=PropertyMock)
+@patch('app.utils.email_processors.InstalledAppFlow.from_client_secrets_file')
+@patch('app.utils.email_processors.build')
+@patch('pickle.dump')
+def test_service_property(
+        mock_pickle_dump,
+        mock_build,
+        mock_from_client_secrets_file,
+        mock_credentials,
+        mock_document_processor,
+        mock_searcher
+):
     # Arrange
-    token_file_path = 'test_token_file'
-    mock_instance = MockGmailProcessorClass(token_file_path)
+    processor = GmailProcessor(mock_document_processor, mock_searcher)
+    mock_creds = Mock()
+    mock_credentials.return_value = mock_creds
 
-    m_open = mock_open()
-    m_open.side_effect = FileNotFoundError
+    # case 1: valid credentials
+    mock_creds.valid = True
+    service = processor.service
 
-    with patch('builtins.open', m_open), patch('os.path.exists', return_value=token_file_content is not None):
-        # Act
-        with pytest.raises(expected_exception) as exc_info:
-            mock_instance._get_credentials_instance()
+    # Assert
+    assert service == mock_build.return_value
+    assert processor._service is not None
+    mock_build.assert_called_once_with('gmail', 'v1', credentials=mock_creds)
+    mock_from_client_secrets_file.assert_not_called()
 
-        # Assert
-        assert str(exc_info.value) == expected_message.format(token_file_path=token_file_path)
+    # case 2: credentials expired, refresh token exists
+    processor._service = None
+    mock_build.reset_mock()
+    mock_creds.valid = False
+    mock_creds.expired = True
+    mock_creds.refresh_token = 'refresh_token'
+    service = processor.service
 
+    # Assert
+    assert service == mock_build.return_value
+    mock_creds.refresh.assert_called_once()
+    mock_pickle_dump.assert_called_once()
+    mock_from_client_secrets_file.assert_not_called()
 
+    # case 3: no credentials, user login required
+    processor._service = None
+    mock_build.reset_mock()
+    mock_creds.valid = False
+    mock_creds.expired = False
+    mock_creds.refresh_token = None
+    mock_new_creds = Mock()
+    mock_flow = Mock()
+    mock_from_client_secrets_file.return_value = mock_flow
+    mock_flow.run_local_server.return_value = mock_new_creds
+    service = processor.service
 
-@pytest.mark.parametrize(
-    "token_file_content, expected_exception, expected_message",
-    [
-        # Happy path
-        (pickle.dumps(Credentials(token='its-a-token-to-everyone')), None, None),
-
-        # Edge case: token file does not exist
-        (None, FileNotFoundError, 'No token file found at non_existent_file'),
-
-        # Error case: token file contains invalid data
-        (pickle.dumps("invalid_data"), TypeError, "Expected Credentials instance, got <class 'str'>"),
-    ],
-    ids=[
-        "valid_credentials",
-        "file_not_found",
-        "invalid_credentials_type",
-    ]
-)
-def test_get_credentials_instance_by_file_not_found(token_file_content, expected_exception, expected_message):
-    # Arrange
-    token_file_path = 'test_token_file'
-    mock_instance = MockGmailProcessorClass(token_file_path)
-
-    if token_file_content is not None:
-        m_open = mock_open(read_data=token_file_content)
-    else:
-        m_open = mock_open()
-        m_open.side_effect = FileNotFoundError
-
-    with patch('builtins.open', m_open), patch('os.path.exists', return_value=token_file_content is not None):
-
-        # Act
-        if expected_exception:
-            with pytest.raises(expected_exception) as exc_info:
-                mock_instance._get_credentials_instance()
-
-            # Assert
-            assert str(exc_info.value) == expected_message
-        else:
-            creds = mock_instance._get_credentials_instance()
-
-            # Assert
-            assert isinstance(creds, Credentials)
-
-
-@pytest.mark.parametrize(
-    "token_file_content, expected_exception, expected_message",
-    [
-        # Error case: token file contains invalid data
-        (pickle.dumps("invalid_data"), TypeError, "Expected Credentials instance, got {type}"),
-    ],
-    ids=[
-        "invalid_credentials_type",
-    ]
-)
-def test_get_credentials_instance_by_invalid_credentials_type(token_file_content, expected_exception, expected_message):
-    # Arrange
-    token_file_path = 'test_token_file'
-    mock_instance = MockGmailProcessorClass(token_file_path)
-    m_open = mock_open(read_data=token_file_content)
-
-    with patch('builtins.open', m_open), patch('os.path.exists', return_value=token_file_content is not None):
-        # Act
-        with pytest.raises(expected_exception) as exc_info:
-            mock_instance._get_credentials_instance()
-
-        # Assert
-        assert str(exc_info.value) == expected_message.format(type=type(pickle.loads(token_file_content)))
+    # Assert
+    assert service == mock_build.return_value
+    mock_from_client_secrets_file.assert_called_once_with(processor.credentials_file, SCOPES)
+    mock_flow.run_local_server.assert_called_once_with(port=0)
+    mock_build.assert_called_once_with('gmail', 'v1', credentials=mock_new_creds)
