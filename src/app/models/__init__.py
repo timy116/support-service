@@ -6,6 +6,7 @@ from beanie import Document
 # All database models must be imported here to be able to
 # initialize them on startup.
 from .daily_reports import DailyReport
+from .special_holidays import SpecialHoliday
 
 DocType = TypeVar("DocType", bound=Document)
 
