@@ -11,7 +11,10 @@ class SpecialHoliday(Document):
     name: str
     is_holiday: bool = Field(..., alias="isholiday")
     holiday_category: str = Field(..., alias="holidaycategory")
-    description: str
+    description: Union[str, None] = None
+
+    class Settings:
+        name = "special_holidays"
 
     @staticmethod
     def cleaned_value(value: str):
@@ -39,6 +42,9 @@ class SpecialHoliday(Document):
     @field_validator("is_holiday", mode="before")
     @classmethod
     def set_name(cls, value: str):
+        if isinstance(value, bool):
+            return value
+
         cleaned_value = cls.cleaned_value(value)
 
         if cleaned_value == "是":
