@@ -62,3 +62,12 @@ class GmailScopes(BaseEnum):
     SEND = "https://www.googleapis.com/auth/gmail.send"
     MODIFY = "https://www.googleapis.com/auth/gmail.modify"
     FULL = "https://mail.google.com/"
+
+
+class IsNotHolidays(BaseEnum):
+    LABOR_DAY = "勞動節"
+    ARMED_FORCES_DAY = "軍人節"
+
+
+class OpenApis(BaseEnum):
+    TAIWAN_CALENDAR_API = "https://data.ntpc.gov.tw/api/datasets/308DCD75-6434-45BC-A95F-584DA4FED251"
