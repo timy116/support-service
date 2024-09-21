@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict
 from pymongo.client_session import ClientSession
 
 from app.core.enums import Category, SupplyType, ProductType
-from app.models.utils import get_datetime_utc_8
+from app.utils.datetime import get_datetime_utc_8
 
 
 class Product(BaseModel):

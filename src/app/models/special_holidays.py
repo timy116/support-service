@@ -4,6 +4,8 @@ from typing import Union
 from beanie import Document, Indexed
 from pydantic import field_validator, Field
 
+from app.utils.datetime import datetime_format
+
 
 class SpecialHoliday(Document):
     date: date
@@ -15,6 +17,7 @@ class SpecialHoliday(Document):
 
     class Settings:
         name = "special_holidays"
+        indexes = ["year", "date"]
 
     @staticmethod
     def cleaned_value(value: str):
@@ -25,17 +28,7 @@ class SpecialHoliday(Document):
     def validate_date(cls, value: Union[date, str]):
         if isinstance(value, str):
             cleaned_value = cls.cleaned_value(value)
-
-            if len(cleaned_value) == 8:
-                value = datetime.strptime(value, "%Y%m%d").date()
-            elif cleaned_value.find('-') == 3:
-                value = datetime.strptime(value, "%Y-%m-%d").date()
-            elif cleaned_value.find('/') == 3:
-                value = datetime.strptime(value, "%Y/%m/%d").date()
-            elif cleaned_value.find('.') == 3:
-                value = datetime.strptime(value, "%Y.%m.%d").date()
-            else:
-                raise ValueError("Invalid date format")
+            value = datetime_format(cleaned_value)
 
         return value
 
