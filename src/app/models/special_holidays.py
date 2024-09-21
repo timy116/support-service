@@ -5,6 +5,7 @@ from beanie import Document, Indexed
 from pydantic import field_validator, Field
 
 from app.utils.datetime import datetime_format
+from app.utils.open_apis import TaiwanCalendarApi
 
 
 class SpecialHoliday(Document):
@@ -44,3 +45,15 @@ class SpecialHoliday(Document):
             return True
         else:
             raise ValueError("is_holiday should be '是'")
+
+    @classmethod
+    async def get_documents_by_year(cls, year: int):
+        documents = cls.find(cls.year == year)
+
+        if await documents.count() == 0:
+            l = await TaiwanCalendarApi(year).cleaned_list
+            await cls.insert_many([cls(**d) for d in l])
+
+            documents = cls.find(cls.year == year)
+
+        return documents

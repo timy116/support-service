@@ -1,7 +1,6 @@
 import requests
-from requests import Response
 
-from app.core.enums import OpenApis
+from app.core.enums import OpenApis, IsNotHolidays
 
 
 class TaiwanCalendarApi:
@@ -14,5 +13,19 @@ class TaiwanCalendarApi:
             "size": size
         }
 
-    def get(self) -> Response:
+    @property
+    async def cleaned_list(self) -> list[dict]:
+        json = await self.get()
+        _list = []
+
+        for d in json:
+            try:
+                if d["name"] is not None:
+                    IsNotHolidays(d["name"])
+            except ValueError:
+                _list.append(d)
+
+        return _list
+
+    async def get(self):
         return requests.api.get(f"{self.url}/{self.formant}", params=self.params).json()

@@ -24,6 +24,7 @@ services:
       - main
     depends_on:
       - mongo
+
   redis:
     image: redis:alpine
     container_name: support-service-redis
@@ -36,6 +37,19 @@ services:
       - redis-data:/data
     networks:
       - main
+
+  redis-commander:
+    image: ghcr.io/joeferner/redis-commander:latest
+    container_name: redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8085:8081"
+    depends_on:
+      - "redis"
+    networks:
+      - main
+
   support-service:
     build:
       context: .
