@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Literal
 
 
 class BaseEnum(str, Enum):
@@ -71,3 +72,7 @@ class IsNotHolidays(BaseEnum):
 
 class OpenApis(BaseEnum):
     TAIWAN_CALENDAR_API = "https://data.ntpc.gov.tw/api/datasets/308DCD75-6434-45BC-A95F-584DA4FED251"
+
+
+class RedisCacheKey(BaseEnum):
+    TAIWAN_CALENDAR = "taiwan_calendar_{year}"
