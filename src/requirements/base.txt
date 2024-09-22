@@ -7,5 +7,4 @@ google-api-python-client
 motor
 beanie
 PyMuPDF
-aioredis
-hiredis[aioredis]
+redis

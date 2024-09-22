@@ -2,10 +2,10 @@ import os
 from contextlib import asynccontextmanager
 from typing import Set
 
-import aioredis
 from fastapi import FastAPI, status
 from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
+from redis import asyncio as aioredis
 
 from app import api
 from app.core.config import settings
@@ -18,11 +18,7 @@ from app.utils.file_processors import DocumentProcessor
 @asynccontextmanager
 async def lifespan(application: FastAPI):
     await init_db.init()
-    application.state.redis_pool = await aioredis.from_url(
-        settings.REDIS_URI,
-        encoding="utf-8",
-        decode_responses=True,
-    )
+    application.state.redis_pool = await aioredis.from_url(settings.REDIS_URI)
 
     yield
 
@@ -66,12 +62,12 @@ app.include_router(api.router)
 
 @app.get("/")
 async def root():
-    p = GmailProcessor(DocumentProcessor(FileTypes.PDF), GmailDailyReportSearcher)
-    p.process('113年09月13日敏感性農產品產地價格日報表')
-
     return {"message": "Hello World"}
 
 
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
+@app.get("/testing/get-email")
+async def say_hello():
+    p = GmailProcessor(DocumentProcessor(FileTypes.PDF), GmailDailyReportSearcher)
+    p.process('113年09月13日敏感性農產品產地價格日報表')
+
+    return {"message": "Testing for email processing."}

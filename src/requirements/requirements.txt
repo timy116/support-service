@@ -8,7 +8,11 @@ google-auth-httplib2
 google-api-python-client
 motor
 beanie
-pytest
 PyMuPDF
-aioredis
-hiredis[aioredis]
+redis
+
+# test requirements
+pytest
+pytest-asyncio
+pytest-mock
+mongomock-motor

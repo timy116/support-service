@@ -1,9 +1,10 @@
 import pickle
 from typing import Callable, ParamSpec, Awaitable, Any
 
-import aioredis
+from redis import asyncio as aioredis
 from fastapi import Depends
 from starlette.requests import Request
+import contextlib
 
 P = ParamSpec("P")
 
@@ -28,8 +29,8 @@ class Redis:
         return await self.connection.get(key)
 
 
-async def get_connection(request: Request) -> aioredis.Redis:
-    pool = request.app.state.redis_pool
+async def get_connection(request: Request):
+    pool: aioredis.Redis = request.app.state.redis_pool
 
     async with pool.client() as conn:
         yield conn
