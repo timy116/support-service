@@ -1,59 +1,53 @@
-from datetime import datetime, date
+from datetime import date
 from typing import Union
 
 from beanie import Document, Indexed
-from pydantic import field_validator, Field
+from pydantic import field_validator, Field, BaseModel
 
+from app.models.utils import clean_value
 from app.utils.datetime import datetime_format
 from app.utils.open_apis import TaiwanCalendarApi
 
 
-class SpecialHoliday(Document):
-    date: date
-    year: Indexed(int)
+class HolidayInfo(BaseModel):
     name: str
-    is_holiday: bool = Field(..., alias="isholiday")
     holiday_category: str = Field(..., alias="holidaycategory")
     description: Union[str, None] = None
 
-    class Settings:
-        name = "special_holidays"
-        indexes = ["year", "date"]
 
-    @staticmethod
-    def cleaned_value(value: str):
-        return value.strip().replace(" ", "").replace("　", "")
+class Holiday(BaseModel):
+    date: date
+    info: HolidayInfo
 
     @field_validator("date", mode="before")
     @classmethod
     def validate_date(cls, value: Union[date, str]):
         if isinstance(value, str):
-            cleaned_value = cls.cleaned_value(value)
+            cleaned_value = clean_value(value)
             value = datetime_format(cleaned_value)
 
         return value
 
-    @field_validator("is_holiday", mode="before")
-    @classmethod
-    def set_name(cls, value: str):
-        if isinstance(value, bool):
-            return value
 
-        cleaned_value = cls.cleaned_value(value)
+class SpecialHoliday(Document):
+    year: Indexed(int)
+    holidays: list[Holiday]
 
-        if cleaned_value == "是":
-            return True
-        else:
-            raise ValueError("is_holiday should be '是'")
+    class Settings:
+        name = "special_holidays"
 
     @classmethod
-    async def get_documents_by_year(cls, year: int):
-        documents = cls.find(cls.year == year)
+    async def create_holidays(cls, l: list[dict]) -> list[Holiday]:
+        return [Holiday(date=d["date"], info=HolidayInfo(**d["info"])) for d in l]
 
-        if await documents.count() == 0:
+    @classmethod
+    async def get_document_by_year(cls, year: int):
+        document = cls.find_one(cls.year == year)
+
+        if await document is None:
             l = await TaiwanCalendarApi(year).cleaned_list
-            await cls.insert_many([cls(**d) for d in l])
+            await cls.insert(cls(year=year, holidays=await cls.create_holidays(l)))
 
-            documents = cls.find(cls.year == year)
+            document = cls.find_one(cls.year == year)
 
-        return documents
+        return await document

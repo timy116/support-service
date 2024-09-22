@@ -23,7 +23,15 @@ class TaiwanCalendarApi:
                 if d["name"] is not None:
                     IsNotHolidays(d["name"])
             except ValueError:
-                _list.append(d)
+                _dict = {
+                    "date": d["date"],
+                    "info": {
+                        "name": d["name"],
+                        "holidaycategory": d["holidaycategory"],
+                        "description": d["description"]
+                    }
+                }
+                _list.append(_dict)
 
         return _list
 

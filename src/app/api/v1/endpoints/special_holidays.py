@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter
 from fastapi import Depends
@@ -10,19 +10,22 @@ from app.models import SpecialHoliday
 router = APIRouter()
 
 
-async def cache_key() -> str:
-    return RedisCacheKey.TAIWAN_CALENDAR
+async def cache_key(year: int) -> str:
+    return RedisCacheKey.TAIWAN_CALENDAR.value.format(year=year)
 
 
 @router.get("/holidays/{year}")
 async def get_holidays_by_year(
-        key: Annotated[RedisCacheKey, Depends(cache_key)], redis: Annotated[Redis, Depends(get_redis)]
-) -> dict:
-    data = await redis.get(key, auto_set=True)
+        key: Annotated[str, Depends(cache_key)],
+        redis: Annotated[Redis, Depends(get_redis)],
+) -> dict[str, Any]:
+    data: SpecialHoliday = await redis.get_with_auto_set(
+        key,
+        SpecialHoliday.get_document_by_year,
+        redis.year
+    )
 
-    if data is None:
-        return {"message": "No data"}
-    else:
-        return {
-            "result": await data.to_list()
-        }
+    return {
+        "total": len(data.holidays),
+        "holidays": data.holidays
+    }
