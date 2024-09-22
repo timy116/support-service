@@ -1,12 +1,11 @@
 import pickle
+from typing import Callable, ParamSpec, Awaitable, Any
 
 import aioredis
 from fastapi import Depends
 from starlette.requests import Request
 
-from app.core.enums import RedisCacheKey
-from app.models import SpecialHoliday
-
+P = ParamSpec("P")
 
 
 class Redis:
@@ -14,19 +13,19 @@ class Redis:
         self.year = year
         self.connection = conn
 
-    async def get(self, key: RedisCacheKey, auto_set=False):
-        if auto_set and key == RedisCacheKey.TAIWAN_CALENDAR:
-            formatted_key = key.value.format(year=self.year)
+    async def get_with_auto_set(self, key: str, func: Callable[..., Awaitable[Any]], *args):
+        data = await self.connection.get(key)
 
-        data = await self.connection.get(formatted_key)
         if data is None:
-
-            data = await SpecialHoliday.get_documents_by_year(self.year)
-            await self.connection.set(formatted_key, pickle.dumps(data))
+            data = await func(*args)
+            await self.connection.set(key, pickle.dumps(data))
         else:
             data = pickle.loads(data)
 
         return data
+
+    async def get(self, key: str):
+        return await self.connection.get(key)
 
 
 async def get_connection(request: Request) -> aioredis.Redis:
