@@ -36,3 +36,4 @@ poetry.toml
 *.pdf
 *.ipynb
 credentials.json
+.local/
