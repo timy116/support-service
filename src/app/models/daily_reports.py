@@ -11,6 +11,7 @@ from app.utils.datetime import get_datetime_utc_8
 
 
 class Product(BaseModel):
+    date: date
     product_name: str
     average_price: float
 
@@ -32,10 +33,12 @@ class DailyReport(Document):
                 "product_type": "水果",
                 "products": [
                     {
+                        "date": "2024-09-10",
                         "product_name": "香蕉",
                         "average_price": 10.0
                     },
                     {
+                        "date": "2024-09-10",
                         "product_name": "芒果",
                         "average_price": 15.3
                     }

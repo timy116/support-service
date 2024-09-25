@@ -28,8 +28,8 @@ class TestDailyReport(IsolatedAsyncioTestCase):
                 supply_type=SupplyType.ORIGIN,
                 product_type=ProductType.FRUIT,
                 products=[
-                    Product(product_name="香蕉", average_price=10.0),
-                    Product(product_name="芒果", average_price=15.3)
+                    Product(date=self.date,product_name="香蕉", average_price=10.0),
+                    Product(date=self.date,product_name="芒果", average_price=15.3)
                 ]
             ),
             DailyReport(
@@ -38,8 +38,8 @@ class TestDailyReport(IsolatedAsyncioTestCase):
                 supply_type=SupplyType.WHOLESALE,
                 product_type=ProductType.FRUIT,
                 products=[
-                    Product(product_name="香蕉", average_price=10.0),
-                    Product(product_name="芒果", average_price=15.3)
+                    Product(date=self.date,product_name="香蕉", average_price=10.0),
+                    Product(date=self.date,product_name="芒果", average_price=15.3)
                 ]
             ),
             DailyReport(
@@ -48,7 +48,7 @@ class TestDailyReport(IsolatedAsyncioTestCase):
                 supply_type=SupplyType.ORIGIN,
                 product_type=ProductType.FISH,
                 products=[
-                    Product(product_name="吳郭魚", average_price=30.5),
+                    Product(date=self.date,product_name="吳郭魚", average_price=30.5),
                 ]
             ),
             DailyReport(
@@ -57,7 +57,7 @@ class TestDailyReport(IsolatedAsyncioTestCase):
                 supply_type=SupplyType.WHOLESALE,
                 product_type=ProductType.SHRIMP,
                 products=[
-                    Product(product_name="白蝦", average_price=100.3)
+                    Product(date=self.date,product_name="白蝦", average_price=100.3)
                 ]
             ),
         ]
@@ -74,8 +74,8 @@ class TestDailyReport(IsolatedAsyncioTestCase):
             supply_type=SupplyType.ORIGIN,
             product_type=ProductType.FRUIT,
             products=[
-                Product(product_name="香蕉", average_price=10.0),
-                Product(product_name="芒果", average_price=15.3)
+                Product(date=self.date,product_name="香蕉", average_price=10.0),
+                Product(date=self.date,product_name="芒果", average_price=15.3)
             ]
         )
         await report.create()
