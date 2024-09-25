@@ -34,12 +34,7 @@ def test_get_credentials_instance_valid_credentials(
     # case 2: token file does not exist
     processor._credentials = None
     mock_path_exists.return_value = False
-
-    # Assert
-    with pytest.raises(FileNotFoundError):
-        credentials = processor.credentials
-
-        assert credentials is None
+    assert processor.credentials is None
 
     # case 3: invalid credentials type
     mock_path_exists.return_value = True
@@ -57,9 +52,11 @@ def test_get_credentials_instance_valid_credentials(
 @patch('app.utils.email_processors.GmailProcessor.credentials', new_callable=PropertyMock)
 @patch('app.utils.email_processors.InstalledAppFlow.from_client_secrets_file')
 @patch('app.utils.email_processors.build')
+@patch('app.utils.email_processors.open', new_callable=mock_open, read_data=b"token_file_content")
 @patch('pickle.dump')
 def test_service_property(
         mock_pickle_dump,
+        mock_built_open,
         mock_build,
         mock_from_client_secrets_file,
         mock_credentials,
@@ -68,6 +65,8 @@ def test_service_property(
 ):
     # Arrange
     processor = GmailProcessor(mock_document_processor, mock_searcher)
+    processor.credentials_file = 'path/to/credentials.json'
+    processor.token_file = 'path/to/token.pickle'
     mock_creds = Mock()
     mock_credentials.return_value = mock_creds
 
@@ -90,6 +89,7 @@ def test_service_property(
     service = processor.service
 
     # Assert
+    mock_built_open.assert_called_once_with(processor.token_file, 'wb')
     assert service == mock_build.return_value
     mock_creds.refresh.assert_called_once()
     mock_pickle_dump.assert_called_once()
