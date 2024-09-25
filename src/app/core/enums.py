@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, IntEnum, auto
 from typing import Literal
 
 
@@ -42,6 +42,11 @@ class ProductType(BaseEnum):
     OTHERS = "其他"
 
 
+class DailyReportType(BaseEnum):
+    FRUIT = "{roc_year}年{month}月{day}日敏感性農產品產地價格日報表"
+    FISHERY = "農業部通報魚價{roc_year}.{month}.{day}"
+
+
 class LogLevel(BaseEnum):
     DEBUG = "DEBUG"
     INFO = "INFO"
@@ -76,3 +81,13 @@ class OpenApis(BaseEnum):
 
 class RedisCacheKey(BaseEnum):
     TAIWAN_CALENDAR = "taiwan_calendar_{year}"
+
+
+class WeekDay(IntEnum):
+    MONDAY = auto()
+    TUESDAY = auto()
+    WEDNESDAY = auto()
+    THURSDAY = auto()
+    FRIDAY = auto()
+    SATURDAY = auto()
+    SUNDAY = auto()
