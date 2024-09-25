@@ -65,8 +65,8 @@ def test_service_property(
 ):
     # Arrange
     processor = GmailProcessor(mock_document_processor, mock_searcher)
-    processor.credentials_file = 'path/to/credentials.json'
-    processor.token_file = 'path/to/token.pickle'
+    # processor.credentials_file = 'path/to/credentials.json'
+    # processor.token_file = 'path/to/token.pickle'
     mock_creds = Mock()
     mock_credentials.return_value = mock_creds
 

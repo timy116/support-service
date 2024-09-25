@@ -4,7 +4,7 @@ import pickle
 import tempfile
 from abc import abstractmethod, ABC
 from os.path import join as path_join, exists
-from typing import List, Union, Type
+from typing import List, Union, Type, BinaryIO
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -105,11 +105,11 @@ class GmailProcessor(EmailProcessor):
         self.searcher_class = searcher
 
     @property
-    def credentials(self) -> Credentials:
+    def credentials(self) -> Union[Credentials, None]:
         try:
             if self._credentials is None:
                 if not exists(self.token_file):
-                    raise FileNotFoundError(f'No token file found at {self.token_file}')
+                    return  self._credentials
 
                 with open(self.token_file, 'rb') as token:
                     creds = pickle.load(token)
@@ -160,7 +160,7 @@ class GmailProcessor(EmailProcessor):
 
         return self._searcher
 
-    def process(self, keyword: str) -> List[dict]:
+    def process(self, keyword: Union[str, None] = None) -> List[dict]:
         emails = self.searcher.search(keyword, self.document_processor.file_type)
         results = []
 
