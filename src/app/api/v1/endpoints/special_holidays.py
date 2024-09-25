@@ -16,13 +16,14 @@ async def cache_key(year: int) -> str:
 
 @router.get("/holidays/{year}")
 async def get_holidays_by_year(
+        year: int,
         key: Annotated[str, Depends(cache_key)],
         redis: Annotated[Redis, Depends(get_redis)],
 ) -> dict[str, Any]:
     data: SpecialHoliday = await redis.get_with_auto_set(
         key,
         SpecialHoliday.get_document_by_year,
-        redis.year
+        year
     )
 
     return {

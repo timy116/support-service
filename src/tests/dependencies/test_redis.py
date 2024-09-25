@@ -40,7 +40,7 @@ async def mock_redis_instance(mock_request, mock_redis_pool):
     connection_generator = get_connection(mock_request)
     mock_conn = await connection_generator.__anext__()
 
-    return await get_redis(2024, mock_conn)
+    return await get_redis(mock_conn)
 
 
 @pytest.mark.asyncio
@@ -64,13 +64,11 @@ async def test_get_connection(mock_request, mock_redis_pool):
 @pytest.mark.asyncio
 async def test_get_redis(mock_request, mock_redis_pool):
     # Arrange
-    test_year = 2024
     connection_generator = get_connection(mock_request)
     mock_conn = await connection_generator.__anext__()
-    redis_instance = await get_redis(test_year, mock_conn)
+    redis_instance = await get_redis(mock_conn)
 
     assert isinstance(redis_instance, Redis)
-    assert redis_instance.year == test_year
     assert redis_instance.connection == mock_conn
 
 

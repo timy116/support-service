@@ -1,17 +1,15 @@
 import pickle
 from typing import Callable, ParamSpec, Awaitable, Any
 
-from redis import asyncio as aioredis
 from fastapi import Depends
+from redis import asyncio as aioredis
 from starlette.requests import Request
-import contextlib
 
 P = ParamSpec("P")
 
 
 class Redis:
-    def __init__(self, year: int, conn: aioredis.Redis):
-        self.year = year
+    def __init__(self, conn: aioredis.Redis):
         self.connection = conn
 
     async def get_with_auto_set(self, key: str, func: Callable[..., Awaitable[Any]], *args):
@@ -36,5 +34,5 @@ async def get_connection(request: Request):
         yield conn
 
 
-async def get_redis(year: int, conn: aioredis.Redis = Depends(get_connection)) -> Redis:
-    return Redis(year, conn)
+async def get_redis(conn: aioredis.Redis = Depends(get_connection)) -> Redis:
+    return Redis(conn)
