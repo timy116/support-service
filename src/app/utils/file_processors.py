@@ -1,12 +1,12 @@
-import re
 from abc import ABC, abstractmethod
+from datetime import date
 from typing import Union
 
 import fitz
 import pandas as pd
-from pandas.core.interchange.dataframe_protocol import DataFrame
+from pandas import DataFrame
 
-from app.core.enums import FileTypes, ProductType
+from app.core.enums import FileTypes, ProductType, DailyReportType
 
 
 class FileReader(ABC):
@@ -23,11 +23,40 @@ class PDFReader(FileReader):
         return text
 
 
-class DailyReportPDFReader(PDFReader):
-    def __init__(self, product_type: ProductType):
-        super().__init__()
+class DailyReportReader:
+    def __init__(self, date: date, product_type: ProductType):
+        self.roc_year = date.year - 1911
+        self.date = date
         self.product_type = product_type
-        self.date_str = ''
+        self.filename: str = self._get_filename()
+
+    def _get_filename(self):
+        filenames = {
+            ProductType.FRUIT: DailyReportType.FRUIT.value.format(
+                roc_year=self.roc_year, month=self.date.month, day=self.date.day
+            ),
+            ProductType.FISH: DailyReportType.FISHERY.format(
+                roc_year=self.roc_year, month=self.date.month, day=self.date.day
+            ),
+        }
+
+        return filenames.get(self.product_type)
+
+
+class DailyReportPDFReader(PDFReader, DailyReportReader):
+    def __init__(self, date: date, product_type: ProductType):
+        super().__init__(date, product_type)
+        self.product_type = product_type
+        self.date = date
+
+    @staticmethod
+    def get_daily_report_reader(date: date, product_type: ProductType) -> PDFReader:
+        reader = {
+            ProductType.FRUIT: FruitDailyReportPDFReader(date, product_type),
+            ProductType.FISH: FishDailyReportPDFReader(date, product_type)
+        }
+
+        return reader.get(product_type, DailyReportPDFReader(date, product_type))
 
     def read(self, file_path: str, product_type: Union[ProductType, None] = None) -> Union[DataFrame, str]:
         self._extract_date_str_from_file_path(file_path)
@@ -35,14 +64,17 @@ class DailyReportPDFReader(PDFReader):
         return super().read(file_path, product_type)
 
     def _extract_date_str_from_file_path(self, file_path: str):
-        file_name = file_path.split('/')[-1].split('_')[0]
+        pass
 
-        # e.g. ['113', '9', '13'] -> 113/9/13
-        date_str = '/'.join([str(int(i)) for i in re.findall('\d+', file_name)])
 
-        if date_str and len(date_str.split('/')) == 3:
-            # e.g. 113/9/13 -> 9/13
-            self.date_str = f'{date_str[1]}/{date_str[2]}'
+class FruitDailyReportPDFReader(DailyReportPDFReader):
+    def _extract_date_str_from_file_path(self, file_path: str):
+        pass
+
+
+class FishDailyReportPDFReader(DailyReportPDFReader):
+    def _extract_date_str_from_file_path(self, file_path: str):
+        pass
 
 
 class ExcelReader(FileReader):
@@ -58,10 +90,10 @@ class TxtReader(FileReader):
 
 
 class FileReaderFactory:
-    @staticmethod
-    def get_reader(file_type: FileTypes, product_type: Union[ProductType, None] = None) -> FileReader:
+    @classmethod
+    def get_reader(cls, date: date, file_type: FileTypes, product_type: Union[ProductType, None] = None) -> FileReader:
         readers = {
-            FileTypes.PDF: FileReaderFactory.get_pdf_reader(product_type),
+            FileTypes.PDF: cls.get_pdf_reader(date, product_type),
             FileTypes.EXCEL: ExcelReader(),
             FileTypes.TXT: TxtReader()
         }
@@ -70,17 +102,17 @@ class FileReaderFactory:
         return readers.get(file_type, PDFReader())
 
     @staticmethod
-    def get_pdf_reader(product_type: Union[ProductType, None] = None) -> PDFReader:
+    def get_pdf_reader(date: date, product_type: Union[ProductType, None] = None) -> PDFReader:
         if product_type is not None:
-            return DailyReportPDFReader(product_type)
+            return DailyReportPDFReader.get_daily_report_reader(date, product_type)
         else:
             # default reader is PDFReader
             return PDFReader()
 
 
 class DocumentProcessor:
-    def __init__(self, file_type: FileTypes):
-        self.reader = FileReaderFactory.get_reader(file_type)
+    def __init__(self, date: date, file_type: FileTypes, product_type: Union[ProductType, None] = None):
+        self.reader = FileReaderFactory.get_reader(date, file_type, product_type)
         self.file_type = file_type
 
     def process(self, file_path: str) -> str:

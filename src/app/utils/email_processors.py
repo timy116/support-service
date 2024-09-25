@@ -4,7 +4,7 @@ import pickle
 import tempfile
 from abc import abstractmethod, ABC
 from os.path import join as path_join, exists
-from typing import List, Union, Type, BinaryIO
+from typing import List, Union, Type
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -160,7 +160,7 @@ class GmailProcessor(EmailProcessor):
 
         return self._searcher
 
-    def process(self, keyword: Union[str, None] = None) -> List[dict]:
+    def process(self, keyword: str) -> List[dict]:
         emails = self.searcher.search(keyword, self.document_processor.file_type)
         results = []
 
