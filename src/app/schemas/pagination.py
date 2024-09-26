@@ -1,12 +1,11 @@
 from typing import Generic, List, TypeVar
 
 from pydantic import BaseModel, Field
-from pydantic.generics import GenericModel
 
 SchemaType = TypeVar("SchemaType", bound=BaseModel)
 
 
-class Paginated(GenericModel, Generic[SchemaType]):
+class Paginated(BaseModel, Generic[SchemaType]):
     page: int
     per_page: int
     total: int
@@ -15,7 +14,7 @@ class Paginated(GenericModel, Generic[SchemaType]):
 
 class PaginationParams(BaseModel):
     page: int = Field(1, ge=1)
-    per_page: int = Field(25, ge=1, le=100)
+    per_page: int = Field(10, ge=1, le=100)
 
     @property
     def skip(self) -> int:
