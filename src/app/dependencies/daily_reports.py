@@ -34,12 +34,10 @@ async def get_common_params(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
-    try:
-        cleaned_product_type = ProductType(product_type) if product_type else None
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
+    if extract:
+        if product_type is None:
+            raise HTTPException(status_code=400, detail='product_type is required when extract is set')
+        if date is None:
+            raise HTTPException(status_code=400, detail='date is required when extract is set')
 
-    if extract and cleaned_product_type is None:
-        raise HTTPException(status_code=400, detail='product_type is required when extract is set')
-
-    return CommonParams(cleaned_date, supply_type, category, cleaned_product_type, extract)
+    return CommonParams(cleaned_date, supply_type, category, product_type, extract)
