@@ -1,5 +1,5 @@
 from datetime import datetime, date
-from typing import Optional, Annotated
+from typing import Optional
 
 from beanie import Document, Indexed, WriteRules
 from beanie.odm.documents import DocType
@@ -7,6 +7,8 @@ from pydantic import BaseModel, ConfigDict
 from pymongo.client_session import ClientSession
 
 from app.core.enums import Category, SupplyType, ProductType
+from app.dependencies.daily_reports import CommonParams
+from app.schemas import PaginationParams, SortingParams
 from app.utils.datetime import get_datetime_utc_8
 
 
@@ -55,3 +57,18 @@ class DailyReport(Document):
                    link_rule: WriteRules = WriteRules.DO_NOTHING, ignore_revision: bool = False, **kwargs) -> DocType:
         self.updated_at = get_datetime_utc_8()
         return await super().save(session, link_rule, ignore_revision, **kwargs)
+
+    @classmethod
+    async def get_by_params(cls, params: CommonParams, paging: PaginationParams, sorting: SortingParams):
+        return await (
+            cls.find(
+                cls.date == params.date,
+                cls.category == params.category,
+                cls.supply_type == params.supply_type,
+                cls.product_type == params.product_type
+            )
+            .skip(paging.skip)
+            .limit(paging.limit)
+            .sort(sorting.sort)
+            .to_list()
+        )
