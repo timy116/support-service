@@ -4,7 +4,7 @@ from typing import Union, Literal
 from fastapi import HTTPException
 
 from app.core.enums import Category, ProductType, SupplyType
-from app.utils.datetime import datetime_format
+from app.utils.datetime import datetime_formatter
 
 
 class CommonParams:
@@ -30,7 +30,7 @@ async def get_common_params(
         extract: bool = False
 ) -> CommonParams:
     try:
-        cleaned_date = datetime_format(date) if date else None
+        cleaned_date = datetime_formatter(date) if date else None
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 

@@ -5,7 +5,7 @@ from beanie import Document, Indexed
 from pydantic import field_validator, Field, BaseModel
 
 from app.models.utils import clean_value
-from app.utils.datetime import datetime_format
+from app.utils.datetime import datetime_formatter
 from app.utils.open_apis import TaiwanCalendarApi
 
 
@@ -24,7 +24,7 @@ class Holiday(BaseModel):
     def validate_date(cls, value: Union[date, str]):
         if isinstance(value, str):
             cleaned_value = clean_value(value)
-            value = datetime_format(cleaned_value)
+            value = datetime_formatter(cleaned_value)
 
         return value
 
