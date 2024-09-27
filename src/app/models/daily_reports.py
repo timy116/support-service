@@ -9,7 +9,9 @@ from pymongo.client_session import ClientSession
 from app.core.enums import Category, SupplyType, ProductType
 from app.dependencies.daily_reports import CommonParams
 from app.schemas import PaginationParams, SortingParams
-from app.utils.datetime import get_datetime_utc_8
+from app.utils.datetime import get_datetime_utc_8, datetime_formatter
+from app.utils.email_processors import GmailProcessor
+from app.utils.file_processors import DocumentProcessor, FruitDailyReportPDFReader
 
 
 class Product(BaseModel):
@@ -71,4 +73,34 @@ class DailyReport(Document):
             .limit(paging.limit)
             .sort(sorting.sort)
             .to_list()
+        )
+
+    @classmethod
+    async def get_fulfilled_instance(cls, doc_processor: DocumentProcessor, mail_processor: GmailProcessor):
+        if not (result := mail_processor.process(doc_processor.reader.filename)):
+            return
+
+        reader: FruitDailyReportPDFReader = doc_processor.reader
+        cols = doc_processor.reader.selected_columns
+        products = []
+
+        for d in result[0]:
+            for col in cols:
+                if col == reader.PRODUCT_COLUMN:
+                    continue
+
+                product_date = datetime_formatter(f"{reader.roc_year}/{col}")
+                if d[col] != 0:
+                    product_name = d[reader.PRODUCT_COLUMN]
+
+                    products.append(
+                        Product(date=product_date, product_name=product_name, average_price=d[col])
+                    )
+
+        return cls(
+            date=reader.date,
+            category=reader.category,
+            supply_type=reader.supply_type,
+            product_type=reader.product_type,
+            products=products
         )
