@@ -109,7 +109,7 @@ class GmailProcessor(EmailProcessor):
         try:
             if self._credentials is None:
                 if not exists(self.token_file):
-                    return  self._credentials
+                    return self._credentials
 
                 with open(self.token_file, 'rb') as token:
                     creds = pickle.load(token)
@@ -165,7 +165,7 @@ class GmailProcessor(EmailProcessor):
         results = []
 
         for email in emails:
-            file_content = None
+            file_content: Union[dict, str] = ""
 
             if email.get('has_file'):
                 file_content = self._process_file_attachment(email['id'], email['subject'])
@@ -179,7 +179,7 @@ class GmailProcessor(EmailProcessor):
 
         return results
 
-    def _process_file_attachment(self, email_id: str, keyword: str) -> Union[str, None]:
+    def _get_attachment(self, email_id: str):
         message = self.service.users().messages().get(userId='me', id=email_id).execute()
 
         for part in message['payload'].get('parts', []):
@@ -187,24 +187,29 @@ class GmailProcessor(EmailProcessor):
                     part['filename'].lower().endswith(f'.{self.document_processor.file_type}')
                     and ('body' in part and 'attachmentId' in part['body'])
             ):
-                attachment = self.service.users().messages().attachments().get(
+                return self.service.users().messages().attachments().get(
                     userId='me', messageId=email_id, id=part['body']['attachmentId']
                 ).execute()
-                file_data = base64.urlsafe_b64decode(attachment['data'].encode('UTF-8'))
 
-                with tempfile.NamedTemporaryFile(
-                        delete=False,
-                        prefix=f'{keyword}_',
-                        suffix=f'.{self.document_processor.file_type}'
-                ) as temp_file:
-                    temp_file.write(file_data)
-                    temp_file_path = temp_file.name
-                try:
-                    return self.document_processor.process(temp_file_path)
-                finally:
-                    # remove the temporary file
-                    os.unlink(temp_file_path)
-        return None
+    def _process_file_attachment(self, email_id: str, keyword: str) -> Union[dict, str]:
+        attachment = self._get_attachment(email_id)
+        file_data = base64.urlsafe_b64decode(attachment['data'].encode('UTF-8'))
+
+        with tempfile.NamedTemporaryFile(
+                delete=False,
+                prefix=f'{keyword}_',
+                suffix=f'.{self.document_processor.file_type}'
+        ) as temp_file:
+            temp_file.write(file_data)
+            temp_file_path = temp_file.name
+        try:
+            return self.document_processor.process(temp_file_path)
+        except Exception as e:
+            print(f'Failed to process file attachment: {e}')
+        finally:
+            # remove the temporary file
+            os.unlink(temp_file_path)
+
 
 
 class SearchRequest(BaseModel):
