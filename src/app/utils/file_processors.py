@@ -5,12 +5,12 @@ from typing import Union
 import fitz
 import pandas as pd
 
-from app.core.enums import FileTypes, ProductType, DailyReportType, WeekDay
+from app.core.enums import FileTypes, ProductType, DailyReportType, WeekDay, SupplyType, Category
 
 
 class FileReader(ABC):
     @abstractmethod
-    def read(self, file_path: str) -> Union[dict, str]:
+    def read(self, file_path: str) -> Union[list, str]:
         pass
 
 
@@ -21,7 +21,7 @@ class PDFReader(FileReader):
         return text
 
 
-class DailyReportReader:
+class DailyReportMetaInfo:
     def __init__(
             self,
             date: date,
@@ -64,17 +64,38 @@ class DailyReportReader:
         return None if prev_day_is_holiday else self.date
 
 
-class DailyReportPDFReader(PDFReader, DailyReportReader):
+class DailyReportPDFMetaInfo(PDFReader, DailyReportMetaInfo):
     def __init__(
-            self, date: date,
+            self,
+            date: date,
             product_type: ProductType,
             date_of_holidays: Union[list[date], None] = None
     ):
         super().__init__(date, product_type)
-        DailyReportReader.__init__(self, date, product_type, date_of_holidays)
+        DailyReportMetaInfo.__init__(self, date, product_type, date_of_holidays)
+        self.supply_type: Union[SupplyType, None] = None
+        self.category: Union[Category, None] = None
         self.product_type = product_type
         self.date = date
         self.doc: Union[fitz.Document, None] = None
+        self._selected_columns = None
+
+    @property
+    def supply_type(self) -> SupplyType:
+        return self._supply_type
+
+    @supply_type.setter
+    def supply_type(self, value: SupplyType):
+        self._supply_type = value
+
+    @property
+    def category(self) -> Category:
+        return self._category
+
+    @category.setter
+    def category(self, value: Category):
+        self._category = value
+
 
     @staticmethod
     def get_daily_report_reader(
@@ -85,19 +106,58 @@ class DailyReportPDFReader(PDFReader, DailyReportReader):
             ProductType.FISH: FishDailyReportPDFReader(date, product_type, date_of_holidays)
         }
 
-        return reader.get(product_type, DailyReportPDFReader(date, product_type))
+        return reader.get(product_type, DailyReportPDFMetaInfo(date, product_type))
 
     def read(self, file_path: str):
         return self._extract_date_str_from_file_path(file_path)
 
-    def _extract_date_str_from_file_path(self, file_path: str) -> dict:
+    def _extract_date_str_from_file_path(self, file_path: str) -> list:
         pass
 
 
-class FruitDailyReportPDFReader(DailyReportPDFReader):
+class FruitDailyReportPDFReader(DailyReportPDFMetaInfo):
     QUERY = '產地 == "平均" and 產品別.str.contains("產地價格監控")'
+    PRODUCT_COLUMN = '產品別'
 
-    def _extract_date_str_from_file_path(self, file_path: str) -> dict:
+    def __init__(
+            self,
+            date: date,
+            product_type: ProductType,
+            date_of_holidays: Union[list[date], None] = None
+    ):
+        super().__init__(date, product_type, date_of_holidays)
+        self.supply_type = SupplyType.ORIGIN
+        self.category = Category.AGRICULTURE
+
+    @property
+    def selected_columns(self) -> list[str]:
+        if self._selected_columns is None:
+            time_delta = 1
+            product_date = self.date - timedelta(days=1)
+            selected_columns = []
+            flag = True
+
+            while flag:
+                product_date = product_date - timedelta(days=1)
+                is_holiday = product_date in self.date_of_holidays
+                weekday = WeekDay(product_date.isoweekday())
+
+                if weekday is WeekDay.SATURDAY or weekday is WeekDay.SUNDAY:
+                    time_delta += 1
+                elif is_holiday:
+                    time_delta += 1
+                else:
+                    flag = False
+
+            for i in range(1, time_delta + 1):
+                dt = product_date + timedelta(days=i)
+                selected_columns.append(f"{dt.month}/{dt.day}")
+
+            self._selected_columns = [self.PRODUCT_COLUMN] + selected_columns
+
+        return self._selected_columns
+
+    def _extract_date_str_from_file_path(self, file_path: str):
         try:
             self.doc = fitz.open(file_path)
             df_tables_data = self._get_tables_data()
@@ -116,48 +176,23 @@ class FruitDailyReportPDFReader(DailyReportPDFReader):
 
         return df
 
-    def _get_tables_data_into_dict(self, df: pd.DataFrame) -> dict:
-        selected_cols = self._get_selected_columns()
-        df['產品別'] = df['產品別'].ffill()
+    def _get_tables_data_into_dict(self, df: pd.DataFrame) -> list:
+        df[self.PRODUCT_COLUMN] = df[self.PRODUCT_COLUMN].ffill()
         result = df \
             .query(self.QUERY) \
             .replace('－', 0) \
-            .reset_index(drop=True)[selected_cols]
+            .reset_index(drop=True)[self.selected_columns]
 
-        for col in selected_cols:
-            if col == '產品別':
+        for col in self.selected_columns:
+            if col == self.PRODUCT_COLUMN:
                 result[col] = result[col].apply(lambda x: str(x).split('\n')[0])
             else:
                 result[col] = result[col].apply(lambda x: float(str(x).split('\n')[0]))
 
         return result.to_dict(orient='records')
 
-    def _get_selected_columns(self) -> list[str]:
-        time_delta = 1
-        product_date = self.date - timedelta(days=1)
-        selected_columns = []
-        flag = True
 
-        while flag:
-            product_date = product_date - timedelta(days=1)
-            is_holiday = product_date in self.date_of_holidays
-            weekday = WeekDay(product_date.isoweekday())
-
-            if weekday is WeekDay.SATURDAY or weekday is WeekDay.SUNDAY:
-                time_delta += 1
-            elif is_holiday:
-                time_delta += 1
-            else:
-                flag = False
-
-        for i in range(1, time_delta + 1):
-            dt = product_date + timedelta(days=i)
-            selected_columns.append(f"{dt.month}/{dt.day}")
-
-        return ["產品別"] + selected_columns
-
-
-class FishDailyReportPDFReader(DailyReportPDFReader):
+class FishDailyReportPDFReader(DailyReportPDFMetaInfo):
     def _extract_date_str_from_file_path(self, file_path: str):
         pass
 
@@ -198,7 +233,7 @@ class FileReaderFactory:
             date: date,product_type: ProductType, date_of_holidays: Union[list[date], None] = None
     ) -> PDFReader:
         if product_type is not None:
-            return DailyReportPDFReader.get_daily_report_reader(date, product_type, date_of_holidays=date_of_holidays)
+            return DailyReportPDFMetaInfo.get_daily_report_reader(date, product_type, date_of_holidays=date_of_holidays)
         else:
             # default reader is PDFReader
             return PDFReader()
