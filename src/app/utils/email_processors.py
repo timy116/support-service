@@ -160,19 +160,16 @@ class GmailProcessor(EmailProcessor):
 
         return self._searcher
 
-    def process(self, keyword: str) -> List[dict]:
+    def process(self, keyword: str) -> List[Union[list[dict[str, str | float]], str]]:
+        if not keyword:
+            return []
+
         emails = self.searcher.search(keyword, self.document_processor.file_type)
         results = []
 
         for email in emails:
-            file_content: Union[dict, str] = ""
-
             if email.get('has_file'):
-                file_content = self._process_file_attachment(email['id'], email['subject'])
-            results.append({
-                'subject': email['subject'],
-                'file_content': file_content
-            })
+                results.append(self._process_file_attachment(email['id'], email['subject']))
 
             if isinstance(self.searcher, GmailDailyReportSearcher):
                 break
@@ -191,7 +188,7 @@ class GmailProcessor(EmailProcessor):
                     userId='me', messageId=email_id, id=part['body']['attachmentId']
                 ).execute()
 
-    def _process_file_attachment(self, email_id: str, keyword: str) -> Union[dict, str]:
+    def _process_file_attachment(self, email_id: str, keyword: str) -> Union[list, str]:
         attachment = self._get_attachment(email_id)
         file_data = base64.urlsafe_b64decode(attachment['data'].encode('UTF-8'))
 
@@ -209,7 +206,6 @@ class GmailProcessor(EmailProcessor):
         finally:
             # remove the temporary file
             os.unlink(temp_file_path)
-
 
 
 class SearchRequest(BaseModel):
