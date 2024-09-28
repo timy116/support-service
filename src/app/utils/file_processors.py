@@ -1,20 +1,35 @@
 from abc import ABC, abstractmethod
-from datetime import date, timedelta
+from datetime import timedelta, datetime
 from typing import Union
 
 import fitz
 import pandas as pd
 
-from app.core.enums import FileTypes, ProductType, DailyReportType, WeekDay, SupplyType, Category
+from app.core.enums import (
+    FileTypes,
+    ProductType,
+    DailyReportType,
+    WeekDay,
+    SupplyType,
+    Category,
+)
 
 
 class FileReader(ABC):
+    """
+    `FileReader` is an abstract class that defines the interface for reading files.
+    """
+
     @abstractmethod
     def read(self, file_path: str) -> Union[list, str]:
         pass
 
 
 class PDFReader(FileReader):
+    """
+    `PDFReader` is a class that reads the content of a PDF file.
+    """
+
     def read(self, file_path: str):
         with fitz.open(file_path) as doc:
             text = "".join(page.get_text() for page in doc)
@@ -22,12 +37,22 @@ class PDFReader(FileReader):
 
 
 class DailyReportMetaInfo:
+    """
+    `DailyReportMetaInfo` is a class that contains the meta information of the daily report.
+    """
+
     def __init__(
             self,
-            date: date,
+            date: datetime.date,
             product_type: ProductType,
-            date_of_holidays: Union[list[date], None] = None
+            date_of_holidays: Union[list[datetime.date], None] = None
     ):
+        """
+        :param date: The date of the daily report.
+        :param product_type: The type of the product.
+        :param date_of_holidays: The list of holidays.
+        """
+
         self.roc_year = date.year - 1911
         self.date = date
         self.product_type = product_type
@@ -36,6 +61,12 @@ class DailyReportMetaInfo:
 
     @property
     def filename(self) -> str:
+        """
+        The filename of the daily report, it is calculated based on the date and product type.
+        Also, the filename is used to get email for searching the daily report.
+
+        :return: The filename of the daily report.
+        """
         if self._filename is None:
             weekday = WeekDay(self.date.isoweekday())
             report_date = self._get_calculated_report_date(weekday)
@@ -43,6 +74,7 @@ class DailyReportMetaInfo:
             if report_date is None:
                 return ""
 
+            # The filename of the daily report is different based on the product type.
             filenames = {
                 ProductType.FRUIT: DailyReportType.FRUIT.value.format(
                     roc_year=self.roc_year, month=str(report_date.month).zfill(2), day=str(report_date.day).zfill(2)
@@ -55,21 +87,33 @@ class DailyReportMetaInfo:
 
         return self._filename
 
-    def _get_calculated_report_date(self, weekday: WeekDay) -> Union[date, None]:
+    def _get_calculated_report_date(self, weekday: WeekDay) -> Union[datetime.date, None]:
+        """
+        Get the calculated report date based on the weekday.
+
+        :param weekday: The weekday of the date.
+        :return: The calculated report date.
+        """
         prev_day_is_holiday = self.date - timedelta(days=1) in self.date_of_holidays
 
+        # because monday does not have a daily report, so we need to get the report of the previous day.
         if weekday is weekday.MONDAY:
+            # Saturday will receive the report of the previous Friday.
             return self.date - timedelta(days=-2)
 
         return None if prev_day_is_holiday else self.date
 
 
-class DailyReportPDFMetaInfo(PDFReader, DailyReportMetaInfo):
+class DailyReportPDFReader(PDFReader, DailyReportMetaInfo):
+    """
+    `DailyReportPDFReader` is a class that reads the content of the daily report in PDF format.
+    """
+
     def __init__(
             self,
-            date: date,
+            date: datetime.date,
             product_type: ProductType,
-            date_of_holidays: Union[list[date], None] = None
+            date_of_holidays: Union[list[datetime.date], None] = None
     ):
         super().__init__(date, product_type)
         DailyReportMetaInfo.__init__(self, date, product_type, date_of_holidays)
@@ -96,34 +140,40 @@ class DailyReportPDFMetaInfo(PDFReader, DailyReportMetaInfo):
     def category(self, value: Category):
         self._category = value
 
-
     @staticmethod
     def get_daily_report_reader(
-            date: date, product_type: ProductType, date_of_holidays: Union[list[date], None] = None
+            date: datetime.date, product_type: ProductType, date_of_holidays: Union[list[datetime.date], None] = None
     ) -> PDFReader:
+        """
+        This method is used to get the essential daily report reader based on the product type.
+        :return: The daily report reader.
+        """
         reader = {
             ProductType.FRUIT: FruitDailyReportPDFReader(date, product_type, date_of_holidays),
             ProductType.FISH: FishDailyReportPDFReader(date, product_type, date_of_holidays)
         }
 
-        return reader.get(product_type, DailyReportPDFMetaInfo(date, product_type))
+        return reader.get(product_type, DailyReportPDFReader(date, product_type))
 
     def read(self, file_path: str):
-        return self._extract_date_str_from_file_path(file_path)
+        return self._extract_data_from_file(file_path)
 
-    def _extract_date_str_from_file_path(self, file_path: str) -> list:
+    def _extract_data_from_file(self, file_path: str) -> list:
         pass
 
 
-class FruitDailyReportPDFReader(DailyReportPDFMetaInfo):
+class FruitDailyReportPDFReader(DailyReportPDFReader):
+    """
+    `FruitDailyReportPDFReader` is a class that "only" reads the content of the daily report of the fruit in PDF format.
+    """
     QUERY = '產地 == "平均" and 產品別.str.contains("產地價格監控")'
     PRODUCT_COLUMN = '產品別'
 
     def __init__(
             self,
-            date: date,
+            date: datetime.date,
             product_type: ProductType,
-            date_of_holidays: Union[list[date], None] = None
+            date_of_holidays: Union[list[datetime.date], None] = None
     ):
         super().__init__(date, product_type, date_of_holidays)
         self.supply_type = SupplyType.ORIGIN
@@ -131,12 +181,16 @@ class FruitDailyReportPDFReader(DailyReportPDFMetaInfo):
 
     @property
     def selected_columns(self) -> list[str]:
+        """
+        The selected columns are the columns that are used to extract the data from the daily report.
+        """
         if self._selected_columns is None:
             time_delta = 1
             product_date = self.date - timedelta(days=1)
             selected_columns = []
             flag = True
 
+            # calculate the time delta based on the holidays and weekends and the start date of the product.
             while flag:
                 product_date = product_date - timedelta(days=1)
                 is_holiday = product_date in self.date_of_holidays
@@ -149,6 +203,7 @@ class FruitDailyReportPDFReader(DailyReportPDFMetaInfo):
                 else:
                     flag = False
 
+            # get the selected columns based on the time delta.
             for i in range(1, time_delta + 1):
                 dt = product_date + timedelta(days=i)
                 selected_columns.append(f"{dt.month}/{dt.day}")
@@ -157,18 +212,29 @@ class FruitDailyReportPDFReader(DailyReportPDFMetaInfo):
 
         return self._selected_columns
 
-    def _extract_date_str_from_file_path(self, file_path: str):
+    def _extract_data_from_file(self, file_path: str):
+        """
+        Extract the data from the PDF file, this method is just open the document then pass it to the other method.
+        """
         try:
             self.doc = fitz.open(file_path)
             df_tables_data = self._get_tables_data()
 
+            # call the other method to get the data into a dictionary.
             return self._get_tables_data_into_dict(df_tables_data)
         finally:
+            # close the document after reading the content whether it is successful or not.
             self.doc.close()
 
     def _get_tables_data(self) -> pd.DataFrame:
+        """
+        Get the tables data from the PDF document and convert it to a pandas DataFrame.
+
+        :return: The tables data as a pandas DataFrame.
+        """
         df = pd.DataFrame()
 
+        # iterate over the pages of the document and get the tables' data.
         for i in range(self.doc.page_count):
             page = self.doc.load_page(i)
             tables = page.find_tables()
@@ -177,12 +243,19 @@ class FruitDailyReportPDFReader(DailyReportPDFMetaInfo):
         return df
 
     def _get_tables_data_into_dict(self, df: pd.DataFrame) -> list:
+        """
+        Get the tables' data into a dictionary.
+
+        :param df: The tables' data already converted to a pandas DataFrame.
+        :return: A list of dictionaries that contain the tables' data.
+        """
         df[self.PRODUCT_COLUMN] = df[self.PRODUCT_COLUMN].ffill()
         result = df \
             .query(self.QUERY) \
             .replace('－', 0) \
             .reset_index(drop=True)[self.selected_columns]
 
+        # clean the data and convert it to the correct type.
         for col in self.selected_columns:
             if col == self.PRODUCT_COLUMN:
                 result[col] = result[col].apply(lambda x: str(x).split('\n')[0])
@@ -192,8 +265,8 @@ class FruitDailyReportPDFReader(DailyReportPDFMetaInfo):
         return result.to_dict(orient='records')
 
 
-class FishDailyReportPDFReader(DailyReportPDFMetaInfo):
-    def _extract_date_str_from_file_path(self, file_path: str):
+class FishDailyReportPDFReader(DailyReportPDFReader):
+    def _extract_data_from_file(self, file_path: str):
         pass
 
 
@@ -210,13 +283,18 @@ class TxtReader(FileReader):
 
 
 class FileReaderFactory:
+    """
+    `FileReaderFactory` is a class that creates the reader based on the file type by
+    using the simple factory pattern.
+    """
+
     @classmethod
     def get_reader(
             cls,
-            date: date,
+            date: datetime.date,
             file_type: FileTypes,
             product_type: Union[ProductType, None] = None,
-            date_of_holidays: Union[list[date], None] = None
+            date_of_holidays: Union[list[datetime.date], None] = None
 
     ) -> FileReader:
         readers = {
@@ -230,22 +308,30 @@ class FileReaderFactory:
 
     @staticmethod
     def get_pdf_reader(
-            date: date,product_type: ProductType, date_of_holidays: Union[list[date], None] = None
+            date: datetime.date, product_type: ProductType, date_of_holidays: Union[list[datetime.date], None] = None
     ) -> PDFReader:
+        """
+        Get the PDF reader based on the product type.
+        :return: The PDF reader.
+        """
         if product_type is not None:
-            return DailyReportPDFMetaInfo.get_daily_report_reader(date, product_type, date_of_holidays=date_of_holidays)
+            return DailyReportPDFReader.get_daily_report_reader(date, product_type, date_of_holidays=date_of_holidays)
         else:
             # default reader is PDFReader
             return PDFReader()
 
 
 class DocumentProcessor:
+    """
+    `DocumentProcessor` is a class that processes the document based on the file type.
+    """
+
     def __init__(
             self,
-            date: date,
+            date: datetime.date,
             file_type: FileTypes,
             product_type: Union[ProductType, None] = None,
-            date_of_holidays: Union[list[date], None] = None
+            date_of_holidays: Union[list[datetime.date], None] = None
     ):
         self.reader = FileReaderFactory.get_reader(
             date,
@@ -256,4 +342,9 @@ class DocumentProcessor:
         self.file_type = file_type
 
     def process(self, file_path: str) -> Union[dict, str]:
+        """
+        Process the document based on the file type.
+
+        :return: The processed document as a dictionary or a string.
+        """
         return self.reader.read(file_path)

@@ -206,13 +206,3 @@ class GmailProcessor(EmailProcessor):
         finally:
             # remove the temporary file
             os.unlink(temp_file_path)
-
-
-class SearchRequest(BaseModel):
-    keyword: str
-
-
-class SendEmailRequest(BaseModel):
-    to: str
-    subject: str
-    body: str
