@@ -59,7 +59,7 @@ class DailyReportMetaInfo:
         prev_day_is_holiday = self.date - timedelta(days=1) in self.date_of_holidays
 
         if weekday is weekday.MONDAY:
-            return self.date - timedelta(days=-2)
+            return self.date - timedelta(days=2)
 
         return None if prev_day_is_holiday else self.date
 
@@ -133,7 +133,7 @@ class FruitDailyReportPDFReader(DailyReportPDFMetaInfo):
     def selected_columns(self) -> list[str]:
         if self._selected_columns is None:
             time_delta = 1
-            product_date = self.date - timedelta(days=1)
+            product_date = self._get_calculated_report_date(WeekDay(self.date.isoweekday())) - timedelta(days=1)
             selected_columns = []
             flag = True
 
