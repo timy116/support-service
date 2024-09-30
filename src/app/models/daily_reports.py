@@ -39,13 +39,19 @@ class DailyReport(Document):
 
     @classmethod
     async def get_by_params(cls, params: CommonParams, paging, sorting):
+        result = cls.find_all()
+
+        if params.date:
+            result = result.find(cls.date == params.date)
+        if params.category:
+            result = result.find(cls.category == params.category)
+        if params.supply_type:
+            result = result.find(cls.supply_type == params.supply_type)
+        if params.product_type:
+            result = result.find(cls.product_type == params.product_type)
+
         return await (
-            cls.find(
-                cls.date == params.date,
-                cls.category == params.category,
-                cls.supply_type == params.supply_type,
-                cls.product_type == params.product_type
-            )
+            result
             .skip(paging.skip)
             .limit(paging.limit)
             .sort(sorting.sort)
