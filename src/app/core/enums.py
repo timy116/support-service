@@ -91,3 +91,13 @@ class WeekDay(IntEnum):
     FRIDAY = auto()
     SATURDAY = auto()
     SUNDAY = auto()
+
+
+class NotificationCategories(BaseEnum):
+    SYSTEM = "system"
+    SERVICE = "service"
+
+
+class NotificationTypes(BaseEnum):
+    EMAIL = "email"
+    LINE = "line"

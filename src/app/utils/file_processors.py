@@ -96,7 +96,6 @@ class DailyReportMetaInfo:
         """
         prev_day_is_holiday = self.date - timedelta(days=1) in self.date_of_holidays
 
-        # because monday does not have a daily report, so we need to get the report of the previous day.
         if weekday is weekday.MONDAY:
             # Saturday will receive the report of the previous Friday.
             return self.date - timedelta(days=-2)
@@ -140,6 +139,7 @@ class DailyReportPDFReader(PDFReader, DailyReportMetaInfo):
     def category(self, value: Category):
         self._category = value
 
+
     @staticmethod
     def get_daily_report_reader(
             date: datetime.date, product_type: ProductType, date_of_holidays: Union[list[datetime.date], None] = None
@@ -181,16 +181,12 @@ class FruitDailyReportPDFReader(DailyReportPDFReader):
 
     @property
     def selected_columns(self) -> list[str]:
-        """
-        The selected columns are the columns that are used to extract the data from the daily report.
-        """
         if self._selected_columns is None:
             time_delta = 1
             product_date = self.date - timedelta(days=1)
             selected_columns = []
             flag = True
 
-            # calculate the time delta based on the holidays and weekends and the start date of the product.
             while flag:
                 product_date = product_date - timedelta(days=1)
                 is_holiday = product_date in self.date_of_holidays
@@ -203,7 +199,6 @@ class FruitDailyReportPDFReader(DailyReportPDFReader):
                 else:
                     flag = False
 
-            # get the selected columns based on the time delta.
             for i in range(1, time_delta + 1):
                 dt = product_date + timedelta(days=i)
                 selected_columns.append(f"{dt.month}/{dt.day}")
@@ -212,10 +207,7 @@ class FruitDailyReportPDFReader(DailyReportPDFReader):
 
         return self._selected_columns
 
-    def _extract_data_from_file(self, file_path: str):
-        """
-        Extract the data from the PDF file, this method is just open the document then pass it to the other method.
-        """
+    def _extract_date_str_from_file_path(self, file_path: str):
         try:
             self.doc = fitz.open(file_path)
             df_tables_data = self._get_tables_data()

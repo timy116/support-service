@@ -3,15 +3,14 @@ from typing import Optional
 
 from beanie import Document, Indexed, WriteRules
 from beanie.odm.documents import DocType
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 from pymongo.client_session import ClientSession
 
 from app.core.enums import Category, SupplyType, ProductType
 from app.dependencies.daily_reports import CommonParams
-from app.schemas import PaginationParams, SortingParams
 from app.utils.datetime import get_datetime_utc_8, datetime_formatter
 from app.utils.email_processors import GmailProcessor
-from app.utils.file_processors import DocumentProcessor, FruitDailyReportPDFReader
+from app.utils.file_processors import FruitDailyReportPDFReader
 
 
 class Product(BaseModel):
@@ -28,28 +27,6 @@ class DailyReport(Document):
     products: list[Product]
     created_at: datetime = get_datetime_utc_8()
     updated_at: Optional[datetime] = None
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "date": "2024-09-11",
-                "category": "農產品",
-                "supply_type": "產地",
-                "product_type": "水果",
-                "products": [
-                    {
-                        "date": "2024-09-10",
-                        "product_name": "香蕉",
-                        "average_price": 10.0
-                    },
-                    {
-                        "date": "2024-09-10",
-                        "product_name": "芒果",
-                        "average_price": 15.3
-                    }
-                ]
-            }
-        }
-    )
 
     class Settings:
         name = "daily_reports"
@@ -61,14 +38,20 @@ class DailyReport(Document):
         return await super().save(session, link_rule, ignore_revision, **kwargs)
 
     @classmethod
-    async def get_by_params(cls, params: CommonParams, paging: PaginationParams, sorting: SortingParams):
+    async def get_by_params(cls, params: CommonParams, paging, sorting):
+        result = cls.find_all()
+
+        if params.date:
+            result = result.find(cls.date == params.date)
+        if params.category:
+            result = result.find(cls.category == params.category)
+        if params.supply_type:
+            result = result.find(cls.supply_type == params.supply_type)
+        if params.product_type:
+            result = result.find(cls.product_type == params.product_type)
+
         return await (
-            cls.find(
-                cls.date == params.date,
-                cls.category == params.category,
-                cls.supply_type == params.supply_type,
-                cls.product_type == params.product_type
-            )
+            result
             .skip(paging.skip)
             .limit(paging.limit)
             .sort(sorting.sort)
@@ -76,7 +59,8 @@ class DailyReport(Document):
         )
 
     @classmethod
-    async def get_fulfilled_instance(cls, doc_processor: DocumentProcessor, mail_processor: GmailProcessor):
+    async def get_fulfilled_instance(cls, mail_processor: GmailProcessor):
+        doc_processor = mail_processor.document_processor
         if not (result := mail_processor.process(doc_processor.reader.filename)):
             return
 
