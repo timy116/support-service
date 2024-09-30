@@ -139,7 +139,6 @@ class DailyReportPDFReader(PDFReader, DailyReportMetaInfo):
     def category(self, value: Category):
         self._category = value
 
-
     @staticmethod
     def get_daily_report_reader(
             date: datetime.date, product_type: ProductType, date_of_holidays: Union[list[datetime.date], None] = None
@@ -178,6 +177,16 @@ class FruitDailyReportPDFReader(DailyReportPDFReader):
         super().__init__(date, product_type, date_of_holidays)
         self.supply_type = SupplyType.ORIGIN
         self.category = Category.AGRICULTURE
+
+    @property
+    def prev_day_is_holiday(self) -> bool:
+        weekday = WeekDay(self.date.isoweekday())
+
+        return (
+                weekday is WeekDay.SATURDAY
+                or WeekDay is WeekDay.SUNDAY
+                or self.date - timedelta(days=1) in self.date_of_holidays
+        )
 
     @property
     def selected_columns(self) -> list[str]:
