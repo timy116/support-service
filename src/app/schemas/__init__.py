@@ -1,4 +1,5 @@
-from beanie.odm.documents import json_schema_extra
+from typing import Union
+
 from pydantic import ConfigDict
 
 from .daily_reports import DailyReport
@@ -8,8 +9,8 @@ from ..core.enums import WeekDay
 
 
 class PaginatedDailyReport(Paginated):
-    weekday: WeekDay
-    prev_day_is_holiday: bool
+    weekday: Union[WeekDay, None]
+    prev_day_is_holiday: Union[bool, None]
     model_config = ConfigDict(json_schema_extra={
         "examples": [
             {

@@ -1,5 +1,6 @@
 import os
 from contextlib import asynccontextmanager
+from http import HTTPStatus
 from typing import Set
 
 from fastapi import FastAPI, status
@@ -9,10 +10,8 @@ from redis import asyncio as aioredis
 
 from app import api
 from app.core.config import settings
-from app.core.enums import FileTypes
 from app.db import init_db
-from app.utils.email_processors import GmailProcessor, GmailDailyReportSearcher
-from app.utils.file_processors import DocumentProcessor
+from app.schemas.error import APIValidationError, CommonHTTPError
 
 
 @asynccontextmanager
@@ -51,6 +50,19 @@ app = FastAPI(
     default_response_class=ORJSONResponse,
     openapi_tags=tags_metadata,
     lifespan=lifespan,
+    responses={
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Validation Error",
+            "model": APIValidationError,  # Adds OpenAPI schema for 422 errors
+        },
+        **{
+            code: {
+                "description": HTTPStatus(code).phrase,
+                "model": CommonHTTPError,
+            }
+            for code in responses
+        },
+    },
 )
 
 static_dir = os.environ.get('STATIC_DIR', 'src/app/static')
@@ -63,11 +75,3 @@ app.include_router(api.router)
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
-
-
-@app.get("/testing/get-email")
-async def say_hello():
-    p = GmailProcessor(DocumentProcessor(FileTypes.PDF), GmailDailyReportSearcher)
-    p.process('113年09月13日敏感性農產品產地價格日報表')
-
-    return {"message": "Testing for email processing."}

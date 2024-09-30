@@ -3,12 +3,11 @@ from typing import Optional
 
 from beanie import Document, Indexed, WriteRules
 from beanie.odm.documents import DocType
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 from pymongo.client_session import ClientSession
 
 from app.core.enums import Category, SupplyType, ProductType
 from app.dependencies.daily_reports import CommonParams
-# from app.schemas import PaginationParams, SortingParams
 from app.utils.datetime import get_datetime_utc_8, datetime_formatter
 from app.utils.email_processors import GmailProcessor
 from app.utils.file_processors import FruitDailyReportPDFReader
