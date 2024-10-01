@@ -216,7 +216,7 @@ class FruitDailyReportPDFReader(DailyReportPDFReader):
 
         return self._selected_columns
 
-    def _extract_date_str_from_file_path(self, file_path: str):
+    def _extract_data_from_file(self, file_path: str):
         try:
             self.doc = fitz.open(file_path)
             df_tables_data = self._get_tables_data()

@@ -106,7 +106,7 @@ def configure_logging() -> None:
             # If the "exc_info" key in the event dict is either true or a
             # sys.exc_info() tuple, remove "exc_info" and render the exception
             # with traceback into the "exception" key.
-            structlog.processors.format_exc_info,
+            # structlog.processors.format_exc_info,
 
             # If some value is in bytes, decode it to a Unicode str.
             structlog.processors.UnicodeDecoder(),

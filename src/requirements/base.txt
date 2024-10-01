@@ -10,3 +10,4 @@ PyMuPDF
 redis
 structlog
 asgi-correlation-id
+rich

@@ -168,7 +168,8 @@ class GmailProcessor(EmailProcessor):
 
         for email in emails:
             if email.get('has_file'):
-                results.append(self._process_file_attachment(email['id'], email['subject']))
+                if result := self._process_file_attachment(email['id'], keyword):
+                    results.append(result)
 
             if isinstance(self.searcher, GmailDailyReportSearcher):
                 break
@@ -200,8 +201,6 @@ class GmailProcessor(EmailProcessor):
             temp_file_path = temp_file.name
         try:
             return self.document_processor.process(temp_file_path)
-        except Exception as e:
-            print(f'Failed to process file attachment: {e}')
         finally:
             # remove the temporary file
             os.unlink(temp_file_path)
