@@ -56,6 +56,9 @@ async def get_daily_reports(
         if len(_list) == 0:
             try:
                 daily_report = await DailyReport.get_fulfilled_instance(mail_processor)
+
+                # Insert the daily report into the database after the response is returned
+                background_tasks.add_task(DailyReport.insert_one, daily_report)
             except:
                 raise HTTPException(status_code=500, detail="Internal server error")
         else:
@@ -67,9 +70,6 @@ async def get_daily_reports(
             "prev_day_is_holiday": mail_processor.document_processor.reader.prev_day_is_holiday,
             "weekday": (WeekDay(params.date.isoweekday())),
         }
-
-        # Insert the daily report into the database after the response is returned
-        background_tasks.add_task(DailyReport.insert_one, daily_report)
     else:
         # If the date is not specified, return the list of daily reports
         response |= {
