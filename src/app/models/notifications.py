@@ -19,3 +19,17 @@ class Notification(Document):
     class Settings:
         name = "notifications"
         indexes = ["date", "category", "type", "level"]
+
+    @classmethod
+    async def create_from_exception(
+            cls, correlation_id: str, message: str, t: NotificationTypes = NotificationTypes.LINE
+    ):
+        return await cls.insert_one(
+            cls(
+                correlation_id=correlation_id,
+                category=NotificationCategories.SYSTEM,
+                type=t,
+                level=LogLevel.ERROR,
+                message=message,
+            )
+        )

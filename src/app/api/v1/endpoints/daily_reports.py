@@ -11,10 +11,12 @@ from app.core.enums import FileTypes, WeekDay
 from app.dependencies import daily_reports, special_holidays
 from app.dependencies.redis import get_redis, Redis
 from app.models.daily_reports import DailyReport
+from app.models.notifications import Notification
 from app.schemas import PaginatedDailyReport
 from app.utils.datetime import get_date
 from app.utils.email_processors import GmailProcessor, GmailDailyReportSearcher
 from app.utils.file_processors import DocumentProcessor
+from app.middlewares.correlation import correlation_id
 
 router = APIRouter()
 logger: BoundLogger = get_logger()
@@ -62,7 +64,11 @@ async def get_daily_reports(
                 # Save the daily report to the database after the response is returned
                 background_tasks.add_task(daily_report.save)
             except Exception as e:
-                await logger.aexception("Failed to get the daily report from the email")
+                msg = "Failed to get the daily report from the email"
+                await logger.aexception(msg)
+
+                # TODO: Refactor this
+                await Notification.create_from_exception(correlation_id.get(), msg)
                 raise HTTPException(status_code=500, detail="Internal server error") from e
         else:
             daily_report = None
