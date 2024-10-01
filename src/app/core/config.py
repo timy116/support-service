@@ -4,6 +4,8 @@ from pydantic import UrlConstraints
 from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.core.enums import LogLevel
+
 # This adds support for 'mongodb+srv' connection schemas when using e.g. MongoDB Atlas
 MongoDsn = Annotated[
     MultiHostUrl,
@@ -32,6 +34,9 @@ class Settings(BaseSettings):
 
     UVICORN_HOST: str
     UVICORN_PORT: int
+
+    # Logging
+    LOG_LEVEL: str = LogLevel.INFO
 
     # MongoDB
     MONGODB_URI: MongoDsn

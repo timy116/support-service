@@ -4,18 +4,22 @@ from http import HTTPStatus
 from typing import Set
 
 from fastapi import FastAPI, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 from redis import asyncio as aioredis
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import api
 from app.core.config import settings
+from app.core.logging import configure_logging
 from app.db import init_db
 from app.schemas.error import APIValidationError, CommonHTTPError
 
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
+    configure_logging()
     await init_db.init()
     application.state.redis_pool = await aioredis.from_url(settings.REDIS_URI)
 
@@ -70,6 +74,34 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Add the router responsible for all /api/ endpoint requests
 app.include_router(api.router)
+
+if settings.USE_CORRELATION_ID:
+    from app.middlewares.correlation import CorrelationMiddleware
+
+    app.add_middleware(CorrelationMiddleware)
+
+
+# Custom HTTPException handler
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(_, exc: StarletteHTTPException) -> ORJSONResponse:
+    return ORJSONResponse(
+        content={
+            "message": exc.detail,
+        },
+        status_code=exc.status_code,
+        headers=exc.headers,
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def custom_validation_exception_handler(
+        _,
+        exc: RequestValidationError,
+) -> ORJSONResponse:
+    return ORJSONResponse(
+        content=APIValidationError.from_pydantic(exc).dict(exclude_none=True),
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+    )
 
 
 @app.get("/")
