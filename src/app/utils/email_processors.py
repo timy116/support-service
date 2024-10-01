@@ -10,9 +10,13 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build, Resource
+from structlog import get_logger, BoundLogger
 
 from app.core.enums import GmailScopes, FileTypes
 from app.utils.file_processors import DocumentProcessor
+
+# Logger
+logger: BoundLogger = get_logger()
 
 # Directory and file names
 CREDENTIALS_DIR_NAME = 'credentials'
@@ -118,8 +122,7 @@ class GmailProcessor(EmailProcessor):
 
                 self._credentials = creds
         except Exception as e:
-            # TODO: log or send a notification for the error
-            print(f'Failed to get credentials instance: {e}')
+            logger.exception('Failed to get credentials instance')
             raise e
 
         return self._credentials
@@ -146,8 +149,7 @@ class GmailProcessor(EmailProcessor):
 
                 self._service = build('gmail', 'v1', credentials=creds)
         except Exception as e:
-            # TODO: log or send a notification for the error
-            print(f'Failed to get credentials instance: {e}')
+            logger.exception('Failed to get Gmail service')
             raise e
 
         return self._service
