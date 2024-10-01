@@ -8,3 +8,5 @@ motor
 beanie
 PyMuPDF
 redis
+structlog
+asgi-correlation-id

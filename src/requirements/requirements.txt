@@ -10,6 +10,8 @@ motor
 beanie
 PyMuPDF
 redis
+structlog
+asgi-correlation-id
 
 # test requirements
 pytest
