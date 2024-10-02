@@ -101,3 +101,7 @@ class NotificationCategories(BaseEnum):
 class NotificationTypes(BaseEnum):
     EMAIL = "email"
     LINE = "line"
+
+
+class LineApis(BaseEnum):
+    NOTIFY = "https://notify-api.line.me/api/notify"
