@@ -3,8 +3,13 @@ from abc import ABC, abstractmethod
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+import requests
+from fastapi import status, BackgroundTasks
+from requests import Response
 from structlog import get_logger, BoundLogger
 
+from app.core.config import settings
+from app.core.enums import NotificationCategories, LineApis, NotificationTypes, LogLevel
 from app.models.notifications import Notification
 from app.utils.email_processors import GmailProcessor
 
@@ -35,16 +40,16 @@ class EmailNotificationStrategy(NotificationStrategy):
 
     def __init__(self, recipient: list[str] = None, subject: str = ""):
         self.mail_processor = GmailProcessor()
-        self.recipient: list = recipient or []
+        self.recipients: list = recipient or list(settings.SERVICE_RECIPIENTS)
         self.subject: str = subject
 
     @property
-    def recipient(self):
-        return self._recipient
+    def recipients(self):
+        return self._recipients
 
-    @recipient.setter
-    def recipient(self, value: list[str]):
-        self._recipient = value
+    @recipients.setter
+    def recipients(self, value: list[str]):
+        self._recipients = value
 
     @property
     def subject(self):
@@ -55,7 +60,7 @@ class EmailNotificationStrategy(NotificationStrategy):
         self._subject = value
 
     def send(self, notification: Notification) -> bool:
-        for recipient in self._recipient:
+        for recipient in self._recipients:
             email_message = MIMEMultipart()
             email_message['to'] = recipient
             email_message['subject'] = self.subject
@@ -70,6 +75,20 @@ class EmailNotificationStrategy(NotificationStrategy):
 
         return True
 
+    def send_system_notify(self, notification: Notification) -> bool:
+        copy_notification = notification.model_copy(
+            update={
+                "category": NotificationCategories.SYSTEM,
+                "type": NotificationTypes.EMAIL,
+                "level": LogLevel.ERROR,
+            }
+        )
+
+        # Save the system notification to the database
+        BackgroundTasks().add_task(copy_notification.save)
+
+        return self.send(copy_notification)
+
 
 class LineNotificationStrategy(NotificationStrategy):
     """
@@ -79,16 +98,62 @@ class LineNotificationStrategy(NotificationStrategy):
     def __init__(self):
         self.mail_strategy = EmailNotificationStrategy()
 
-    def send(self, notification: Notification) -> bool:
-        # 實現LINE發送邏輯
-        try:
-            # TODO: Implement LINE notification sending logic here...
-            ...
+    @staticmethod
+    def get_headers(token: str):
+        return {
+            "Authorization": f"Bearer {token}",
+        }
 
-            return True
+    def _send_notify(self, notification: Notification) -> Response:
+        """
+        Sends a LINE notification using the LINE Notify API.
+
+        :param notification: The notification to send.
+        :return: The response from the LINE Notify API.
+        """
+
+        return requests.post(
+            LineApis.NOTIFY,
+            headers=self.get_headers(
+                settings.SERVICE_NOTIFY_TOKEN
+                if notification.category is NotificationCategories.SERVICE
+                else settings.SYSTEM_NOTIFY_TOKEN
+            ),
+            data={"message": notification.message},
+        )
+
+    def send(self, notification: Notification) -> bool:
+        """
+        Sends a LINE notification.
+        If the notification fails to send or an error occurs, a system notification will be sent via email.
+
+        :param notification: The notification to send.
+        :return: True if the notification was sent successfully, False otherwise.
+        """
+
+        try:
+            resp = self._send_notify(notification)
+
+            # If the response status code is not 200, send a system notification via email
+            if resp.status_code != status.HTTP_200_OK:
+                subject = "Failed to send LINE notification"
+                msg = f"{subject}: {resp.text}"
+                logger.error(msg)
+
+                return self._send_system_notify(subject, notification, msg)
         except Exception as e:
-            print(f"An error occurred: {e}")
-            return False
+            subject = "An error occurred while sending LINE notification"
+            logger.exception(subject)
+            msg = f"{subject}: {e}"
+
+            return self._send_system_notify(subject, notification, msg)
+
+    def _send_system_notify(self, subject: str, notification: Notification, msg: str):
+        self.mail_strategy.subject = subject
+        self.mail_strategy.recipients = list(settings.SYSTEM_RECIPIENTS)
+        self.mail_strategy.send_system_notify(notification.model_copy(update={"message": msg}))
+
+        return False
 
 
 class NotificationManager:
