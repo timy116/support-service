@@ -96,8 +96,8 @@ class GmailDailyReportSearcher(GmailSearcher):
 class GmailProcessor(EmailProcessor):
     def __init__(
             self,
-            document_processor: DocumentProcessor,
-            searcher: Union[Type[GmailSearcher], Type[GmailDailyReportSearcher]]
+            document_processor: Union[DocumentProcessor, None] = None,
+            searcher: Union[Type[GmailSearcher] | Type[GmailDailyReportSearcher], None] = None
     ):
         self._credentials = None
         self._service = None
