@@ -10,13 +10,14 @@ from app.api.v1.endpoints.utils import get_cached_holidays
 from app.core.enums import FileTypes, WeekDay
 from app.dependencies import daily_reports, special_holidays
 from app.dependencies.redis import get_redis, Redis
+from app.middlewares.correlation import correlation_id
 from app.models.daily_reports import DailyReport
 from app.models.notifications import Notification
 from app.schemas import PaginatedDailyReport
 from app.utils.datetime import get_date
 from app.utils.email_processors import GmailProcessor, GmailDailyReportSearcher
 from app.utils.file_processors import DocumentProcessor
-from app.middlewares.correlation import correlation_id
+from app.utils.notification_helper import NotificationManager
 
 router = APIRouter()
 logger: BoundLogger = get_logger()
@@ -30,6 +31,7 @@ async def get_daily_reports(
         redis: Annotated[Redis, Depends(get_redis)],
         paging: schemas.PaginationParams = Depends(),
         sorting: schemas.SortingParams = Depends(),
+        notification_manager: NotificationManager = Depends(daily_reports.get_notification_manager)
 ):
     _list = await DailyReport.get_by_params(params, paging, sorting)
     cached_holidays = await get_cached_holidays(key, redis, params.date.year if params.date else get_date().year)
@@ -66,9 +68,9 @@ async def get_daily_reports(
             except Exception as e:
                 msg = "Failed to get the daily report from the email"
                 await logger.aexception(msg)
+                notification = await Notification.create_from_exception(correlation_id.get(), msg)
+                notification_manager.send_notification(notification)
 
-                # TODO: Refactor this
-                await Notification.create_from_exception(correlation_id.get(), msg)
                 raise HTTPException(status_code=500, detail="Internal server error") from e
         else:
             daily_report = None

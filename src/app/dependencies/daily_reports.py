@@ -1,15 +1,16 @@
-from datetime import date
+import datetime
 from typing import Union, Literal
 
 from fastapi import HTTPException
 
 from app.core.enums import Category, ProductType, SupplyType
 from app.utils.datetime import datetime_formatter
+from app.utils.notification_helper import NotificationManager, LineNotificationStrategy
 
 
 class CommonParams:
     def __init__(
-            self, date: Union[date, None] = None,
+            self, date: Union[datetime.date, None] = None,
             supply_type: Union[SupplyType, None] = None,
             category: Union[Category, None] = None,
             product_type: Union[ProductType, None] = None,
@@ -41,3 +42,7 @@ async def get_common_params(
             raise HTTPException(status_code=400, detail='date is required when extract is set')
 
     return CommonParams(cleaned_date, supply_type, category, product_type, extract)
+
+
+async def get_notification_manager():
+    return NotificationManager(LineNotificationStrategy())
