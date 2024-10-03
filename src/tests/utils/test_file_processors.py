@@ -18,7 +18,59 @@ from app.utils.file_processors import (
     FruitDailyReportPDFReader,
     FileReaderFactory,
     DocumentProcessor,
+    FishDailyReportPDFReader,
 )
+
+
+##########################################
+##### Test `FileReaderFactory` class #####
+##########################################
+def test_file_reader_factory():
+    date = datetime(2024, 10, 3).date()
+    reader = FileReaderFactory.get_reader(date, FileTypes.PDF, ProductType.FRUIT)
+
+    assert isinstance(reader, FruitDailyReportPDFReader)
+
+
+def test_daily_report_pdf_reader_factory():
+    # Arrange
+    # Case 1: `ProductType` is `FRUIT`
+    date = datetime(2024, 10, 3).date()
+    reader = DailyReportPDFReader.get_daily_report_reader(date, ProductType.FRUIT)
+
+    # Assert
+    assert isinstance(reader, FruitDailyReportPDFReader)
+
+    # Case 2: `ProductType` is `FISH`
+    reader = DailyReportPDFReader.get_daily_report_reader(date, ProductType.FISH)
+
+    # Assert
+    assert isinstance(reader, FishDailyReportPDFReader)
+
+    # Case 3: `ProductType` is not in `DailyReportType`
+    reader = DailyReportPDFReader.get_daily_report_reader(date, ProductType.VEGETABLE)
+
+    # Assert
+    assert isinstance(reader, DailyReportPDFReader)
+
+
+##########################################
+##### Test `DocumentProcessor` class #####
+##########################################
+def test_document_processor():
+    # Arrange
+    # Case 1: `ProductType` is `FRUIT`
+    date = datetime(2024, 10, 3).date()
+    processor = DocumentProcessor(date, FileTypes.PDF, ProductType.FRUIT)
+
+    # Assert
+    assert isinstance(processor.reader, FruitDailyReportPDFReader)
+
+    # Case 2: `ProductType` is `FISH`
+    processor = DocumentProcessor(date, FileTypes.PDF, ProductType.FISH)
+
+    # Assert
+    assert isinstance(processor.reader, FishDailyReportPDFReader)
 
 
 ##########################################
