@@ -19,7 +19,7 @@ class TestDailyReport(IsolatedAsyncioTestCase):
         await self.create_data()
 
     async def create_data(self):
-        self.date = get_date()
+        self.date = get_date().replace(month=9, day=11)
 
         reports = [
             DailyReport(
@@ -103,12 +103,12 @@ class TestDailyReport(IsolatedAsyncioTestCase):
         assert len(reports) == 1
 
         # Test date range
-        reports = await DailyReport.find_many(DailyReport.date <= get_date().replace(day=10)).to_list()
+        reports = await DailyReport.find_many(DailyReport.date <= self.date.replace(day=10)).to_list()
 
         assert len(reports) == 2
 
         reports = await DailyReport.find_many(
-            DailyReport.date > get_date().replace(day=5),
+            DailyReport.date > self.date.replace(day=5),
             DailyReport.date <= get_date()
         ).to_list()
 
