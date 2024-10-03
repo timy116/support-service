@@ -5,6 +5,7 @@ from starlette.exceptions import HTTPException
 from structlog import get_logger
 from structlog.stdlib import BoundLogger
 
+import app.dependencies.notifications
 from app import schemas
 from app.api.v1.endpoints.utils import get_cached_holidays
 from app.core.enums import FileTypes, WeekDay
@@ -31,7 +32,7 @@ async def get_daily_reports(
         redis: Annotated[Redis, Depends(get_redis)],
         paging: schemas.PaginationParams = Depends(),
         sorting: schemas.SortingParams = Depends(),
-        notification_manager: NotificationManager = Depends(daily_reports.get_notification_manager)
+        notification_manager: NotificationManager = Depends(app.dependencies.notifications.get_notification_manager)
 ):
     _list = await DailyReport.get_by_params(params, paging, sorting)
     cached_holidays = await get_cached_holidays(key, redis, params.date.year if params.date else get_date().year)

@@ -1,11 +1,12 @@
 import sys
-from typing import Sequence, Type, TypeVar
+from typing import TypeVar
 
 from beanie import Document
 
 # All database models must be imported here to be able to
 # initialize them on startup.
 from .daily_reports import DailyReport
+from .notifications import Notification
 from .special_holidays import SpecialHoliday
 
 DocType = TypeVar("DocType", bound=Document)
