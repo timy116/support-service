@@ -13,8 +13,7 @@ class TaiwanCalendarApi:
             "size": size
         }
 
-    @property
-    async def cleaned_list(self) -> list[dict]:
+    async def get_cleaned_list(self) -> list[dict]:
         json = await self.get()
         _list = []
 

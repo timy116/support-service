@@ -45,7 +45,7 @@ class SpecialHoliday(Document):
         document = cls.find_one(cls.year == year)
 
         if await document is None:
-            l = await TaiwanCalendarApi(year).cleaned_list
+            l = await TaiwanCalendarApi(year).get_cleaned_list()
             await cls.insert(cls(year=year, holidays=await cls.create_holidays(l)))
 
             document = cls.find_one(cls.year == year)
