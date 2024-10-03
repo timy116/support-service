@@ -162,3 +162,59 @@ def test_daily_report_meta_info_filename(special_holidays):
 
     # Assert
     assert meta_info.filename == ""
+
+
+##################################################
+##### Test `FruitDailyReportPDFReader` class #####
+##################################################
+def test_fruit_daily_report_pdf_reader(special_holidays):
+    date = datetime(2024, 10, 3).date()
+    reader = FruitDailyReportPDFReader(date, ProductType.FRUIT, special_holidays)
+
+    assert reader.supply_type == SupplyType.ORIGIN
+    assert reader.category == Category.AGRICULTURE
+
+
+@pytest.mark.parametrize("date,expected", [
+    (datetime(2024, 10, 3), False),  # Thursday
+    (datetime(2024, 10, 5), True),  # Saturday
+    (datetime(2024, 10, 6), True),  # Sunday
+])
+def test_fruit_daily_report_pdf_reader_prev_day_is_holiday(date, expected, special_holidays):
+    reader = FruitDailyReportPDFReader(date.date(), ProductType.FRUIT, special_holidays)
+    assert reader.prev_day_is_holiday == expected
+
+
+@pytest.mark.parametrize("date,expected_columns", [
+    (datetime(2024, 10, 3), ['產品別', '10/2']),
+    (datetime(2024, 10, 1), ['產品別', '9/28', '9/29', '9/30']),
+    (datetime(2024, 9, 19), ['產品別', '9/17', '9/18']),
+], ids=["Normal", "Tuesday", "Special holiday"])
+def test_fruit_daily_report_pdf_reader_selected_columns(date, expected_columns, special_holidays):
+    reader = FruitDailyReportPDFReader(date.date(), ProductType.FRUIT, special_holidays)
+
+    assert reader.selected_columns == expected_columns
+
+
+@patch('fitz.open')
+def test_fruit_daily_report_pdf_reader_extract_data(mock_fitz, special_holidays):
+    # TODO: Add more test cases and more detailed assertions
+
+    # Arrange
+    date = datetime(2024, 10, 3).date()
+    reader = FruitDailyReportPDFReader(date, ProductType.FRUIT, special_holidays)
+    reader._get_tables_data = Mock(return_value=pd.DataFrame({
+        '產品別': ['香蕉\n產地價格監控'],
+        '產地': ['平均'],
+        '10/2': ['11.1\n'],
+    }))
+    mock_doc = Mock()
+    mock_fitz.return_value = mock_doc
+
+    # Act
+    result = reader._extract_data_from_file("test.pdf")
+
+    # Assert
+    assert len(result) == 1
+    assert result[0]['產品別'] == '香蕉'
+    assert result[0]['10/2'] == 11.1

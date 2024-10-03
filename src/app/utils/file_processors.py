@@ -184,7 +184,7 @@ class FruitDailyReportPDFReader(DailyReportPDFReader):
 
         return (
                 weekday is WeekDay.SATURDAY
-                or WeekDay is WeekDay.SUNDAY
+                or weekday is WeekDay.SUNDAY
                 or self.date - timedelta(days=1) in self.date_of_holidays
         )
 
