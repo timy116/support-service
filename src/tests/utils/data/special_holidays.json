@@ -1,0 +1,212 @@
+[
+  {
+    "year": 2024,
+    "holidays": [
+      {
+        "date": {
+          "$date": "2024-01-01T00:00:00Z"
+        },
+        "info": {
+          "name": "中華民國開國紀念日",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": "全國各機關學校放假一日。"
+        }
+      },
+      {
+        "date": {
+          "$date": "2024-02-09T00:00:00Z"
+        },
+        "info": {
+          "name": "農曆除夕",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": null
+        }
+      },
+      {
+        "date": {
+          "$date": "2024-02-10T00:00:00Z"
+        },
+        "info": {
+          "name": "春節",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": "全國各機關學校於二月十日至二月十二日放假三日，其中春節初一、初二適逢星期六、星期日，分別於二月十三日及二月十四日各補假一日。"
+        }
+      },
+      {
+        "date": {
+          "$date": "2024-02-11T00:00:00Z"
+        },
+        "info": {
+          "name": "春節",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": null
+        }
+      },
+      {
+        "date": {
+          "$date": "2024-02-12T00:00:00Z"
+        },
+        "info": {
+          "name": "春節",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": null
+        }
+      },
+      {
+        "date": {
+          "$date": "2024-02-28T00:00:00Z"
+        },
+        "info": {
+          "name": "和平紀念日",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": "全國各機關學校放假一日。"
+        }
+      },
+      {
+        "date": {
+          "$date": "2024-04-04T00:00:00Z"
+        },
+        "info": {
+          "name": "兒童節及民族掃墓節",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": "全國各機關學校放假一日，兒童節與民族掃墓節同一日，於四月五日補假一日。"
+        }
+      },
+      {
+        "date": {
+          "$date": "2024-06-10T00:00:00Z"
+        },
+        "info": {
+          "name": "端午節",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": "全國各機關學校放假一日。"
+        }
+      },
+      {
+        "date": {
+          "$date": "2024-09-17T00:00:00Z"
+        },
+        "info": {
+          "name": "中秋節",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": "全國各機關學校放假一日。"
+        }
+      },
+      {
+        "date": {
+          "$date": "2024-10-10T00:00:00Z"
+        },
+        "info": {
+          "name": "國慶日",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": "全國各機關學校放假一日。"
+        }
+      }
+    ]
+  },
+  {
+    "year": 2025,
+    "holidays": [
+      {
+        "date": {
+          "$date": "2025-01-01T00:00:00Z"
+        },
+        "info": {
+          "name": "中華民國開國紀念日",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": "全國各機關學校放假一日。"
+        }
+      },
+      {
+        "date": {
+          "$date": "2025-01-28T00:00:00Z"
+        },
+        "info": {
+          "name": "農曆除夕",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": null
+        }
+      },
+      {
+        "date": {
+          "$date": "2025-01-29T00:00:00Z"
+        },
+        "info": {
+          "name": "春節",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": null
+        }
+      },
+      {
+        "date": {
+          "$date": "2025-01-30T00:00:00Z"
+        },
+        "info": {
+          "name": "春節",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": null
+        }
+      },
+      {
+        "date": {
+          "$date": "2025-01-31T00:00:00Z"
+        },
+        "info": {
+          "name": "春節",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": null
+        }
+      },
+      {
+        "date": {
+          "$date": "2025-02-28T00:00:00Z"
+        },
+        "info": {
+          "name": "和平紀念日",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": "全國各機關學校放假一日。"
+        }
+      },
+      {
+        "date": {
+          "$date": "2025-04-04T00:00:00Z"
+        },
+        "info": {
+          "name": "兒童節及民族掃墓節",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": "全國各機關學校放假一日，兒童節與民族掃墓節同一日，於四月三日補假一日。"
+        }
+      },
+      {
+        "date": {
+          "$date": "2025-05-31T00:00:00Z"
+        },
+        "info": {
+          "name": "端午節",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": "全國各機關學校放假一日。"
+        }
+      },
+      {
+        "date": {
+          "$date": "2025-10-06T00:00:00Z"
+        },
+        "info": {
+          "name": "中秋節",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": "全國各機關學校放假一日。"
+        }
+      },
+      {
+        "date": {
+          "$date": "2025-10-10T00:00:00Z"
+        },
+        "info": {
+          "name": "國慶日",
+          "holidaycategory": "放假之紀念日及節日",
+          "description": "全國各機關學校放假一日。"
+        }
+      }
+    ]
+  }
+]

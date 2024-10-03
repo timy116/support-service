@@ -80,7 +80,7 @@ class DailyReportMetaInfo:
                     roc_year=self.roc_year, month=str(report_date.month).zfill(2), day=str(report_date.day).zfill(2)
                 ),
                 ProductType.FISH: DailyReportType.FISHERY.format(
-                    roc_year=self.roc_year, month=self.date.month, day=self.date.day
+                    roc_year=self.roc_year, month=str(report_date.month).zfill(2), day=str(report_date.day).zfill(2)
                 ),
             }
             self._filename = filenames.get(self.product_type, "")
@@ -98,7 +98,7 @@ class DailyReportMetaInfo:
 
         if weekday is weekday.MONDAY:
             # Saturday will receive the report of the previous Friday.
-            return self.date - timedelta(days=-2)
+            return self.date - timedelta(days=2)
 
         return None if prev_day_is_holiday else self.date
 
