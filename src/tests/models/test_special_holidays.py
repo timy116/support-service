@@ -2,45 +2,15 @@ from datetime import date
 from unittest.mock import AsyncMock
 
 import pytest
+from pytest_asyncio import fixture
 
 from app.models.special_holidays import Holiday, HolidayInfo, SpecialHoliday
 from app.utils.open_apis import TaiwanCalendarApi
 
 
-@pytest.mark.asyncio
-async def test_holiday_model():
-    holiday = Holiday(
-        date="2024-01-01",
-        info=HolidayInfo(name="New Year's Day", holidaycategory="National Holiday")
-    )
-    assert isinstance(holiday.date, date)
-    assert holiday.date == date(2024, 1, 1)
-    assert holiday.info.name == "New Year's Day"
-    assert holiday.info.holiday_category == "National Holiday"
-
-
-@pytest.mark.asyncio
-async def test_special_holiday_create_holidays():
-    holiday_data = [
-        {
-            "date": "2024-01-01",
-            "info": {
-                "name": "New Year's Day",
-                "holidaycategory": "National Holiday"
-            }
-        }
-    ]
-    holidays = await SpecialHoliday.create_holidays(holiday_data)
-    assert len(holidays) == 1
-    assert isinstance(holidays[0], Holiday)
-    assert holidays[0].date == date(2024, 1, 1)
-    assert holidays[0].info.name == "New Year's Day"
-
-
-@pytest.mark.asyncio
-async def test_special_holiday_get_document_by_year(init_db, mocker):
-    year = 2024
-    mock_api_data = [
+@fixture
+def mock_api_data():
+    return [
         {
             "date": "2024-01-01",
             "info": {
@@ -50,13 +20,46 @@ async def test_special_holiday_get_document_by_year(init_db, mocker):
         }
     ]
 
-    # Mock TaiwanCalendarApi
+
+@pytest.mark.asyncio
+async def test_holiday_model():
+    # Arrange
+    holiday = Holiday(
+        date="2024-01-01",
+        info=HolidayInfo(name="New Year's Day", holidaycategory="National Holiday")
+    )
+
+    # Assert
+    assert isinstance(holiday.date, date)
+    assert holiday.date == date(2024, 1, 1)
+    assert holiday.info.name == "New Year's Day"
+    assert holiday.info.holiday_category == "National Holiday"
+
+
+@pytest.mark.asyncio
+async def test_special_holiday_create_holidays(mock_api_data):
+    # Act
+    holidays = await SpecialHoliday.create_holidays(mock_api_data)
+
+    # Assert
+    assert len(holidays) == 1
+    assert isinstance(holidays[0], Holiday)
+    assert holidays[0].date == date(2024, 1, 1)
+    assert holidays[0].info.name == mock_api_data[0]["info"]["name"]
+
+
+@pytest.mark.asyncio
+async def test_special_holiday_get_document_by_year(init_db, mocker, mock_api_data):
+    # Arrange
+    year = 2024
     mock_api = AsyncMock(spec=TaiwanCalendarApi)
     mock_api.get_cleaned_list = AsyncMock(return_value=mock_api_data)
     mocker.patch('app.models.special_holidays.TaiwanCalendarApi', return_value=mock_api)
 
+    # Act
     document = await SpecialHoliday.get_document_by_year(year)
 
+    # Assert
     assert document is not None
     assert document.year == year
     assert len(document.holidays) == 1
