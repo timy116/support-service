@@ -1,13 +1,46 @@
 import json
 from datetime import datetime
 from os.path import dirname, join, abspath
+from unittest.mock import MagicMock, patch
+
 import pytest
+from starlette.config import environ
+
+# set test config
+environ["UVICORN_HOST"] = "localhost"
+environ["UVICORN_PORT"] = "8000"
+environ["MONGODB_URI"] = "mongodb://test:test@localhost"
+environ["MONGODB_DB_NAME"] = "test"
+environ["REDIS_URI"] = "redis://localhost"
+
+from app.core.config import Settings
+
 from beanie import init_beanie
 from mongomock_motor import AsyncMongoMockClient
 
 from app.models import SpecialHoliday, DailyReport, Notification
 
 BASE_DIR = dirname(abspath(__file__))
+
+
+###################
+# Global fixtures #
+###################
+@pytest.fixture(scope="module", autouse=True)
+def mock_settings():
+    mock_settings = MagicMock(spec=Settings)
+    mock_settings.SYSTEM_RECIPIENTS = "admin@example.com,"
+    mock_settings.SERVICE_RECIPIENTS = "test@example.com,"
+    mock_settings.SERVICE_NOTIFY_TOKEN = "service_token"
+    mock_settings.SYSTEM_NOTIFY_TOKEN = "system_token"
+
+    return mock_settings
+
+
+@pytest.fixture(autouse=True)
+def mock_settings_globally(mock_settings):
+    with patch("app.utils.notification_helper.settings", mock_settings):
+        yield
 
 
 @pytest.fixture
