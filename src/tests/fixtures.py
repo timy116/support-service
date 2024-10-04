@@ -4,20 +4,10 @@ from os.path import dirname, join, abspath
 from unittest.mock import MagicMock, patch
 
 import pytest
-from starlette.config import environ
-
-# set test config
-environ["UVICORN_HOST"] = "localhost"
-environ["UVICORN_PORT"] = "8000"
-environ["MONGODB_URI"] = "mongodb://test:test@localhost"
-environ["MONGODB_DB_NAME"] = "test"
-environ["REDIS_URI"] = "redis://localhost"
-
-from app.core.config import Settings
-
 from beanie import init_beanie
 from mongomock_motor import AsyncMongoMockClient
 
+from app.core.config import Settings
 from app.models import SpecialHoliday, DailyReport, Notification
 
 BASE_DIR = dirname(abspath(__file__))
