@@ -3,7 +3,6 @@ from typing import List, Annotated
 from pydantic import UrlConstraints
 from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from starlette.datastructures import CommaSeparatedStrings
 
 from app.core.enums import LogLevel
 
@@ -51,8 +50,8 @@ class Settings(BaseSettings):
     SERVICE_NOTIFY_TOKEN: str = ""
 
     # Email recipients
-    SYSTEM_RECIPIENTS: CommaSeparatedStrings = ""
-    SERVICE_RECIPIENTS: CommaSeparatedStrings = ""
+    SYSTEM_RECIPIENTS: str = ""
+    SERVICE_RECIPIENTS: str = ""
 
 
 settings = Settings()

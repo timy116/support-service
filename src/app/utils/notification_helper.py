@@ -2,9 +2,11 @@ import base64
 from abc import ABC, abstractmethod
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from typing import Union
 
 import requests
 from fastapi import status, BackgroundTasks
+from starlette.datastructures import CommaSeparatedStrings
 from requests import Response
 from structlog import get_logger, BoundLogger
 
@@ -38,9 +40,9 @@ class EmailNotificationStrategy(NotificationStrategy):
     A concrete implementation of the `NotificationStrategy` interface that sends notifications via email.
     """
 
-    def __init__(self, recipient: list[str] = None, subject: str = ""):
+    def __init__(self, recipient: Union[CommaSeparatedStrings, None] = None, subject: str = ""):
         self.mail_processor = GmailProcessor()
-        self.recipients: list = recipient or list(settings.SERVICE_RECIPIENTS)
+        self.recipients: CommaSeparatedStrings = recipient or CommaSeparatedStrings(settings.SERVICE_RECIPIENTS)
         self.subject: str = subject
 
     @property
@@ -48,7 +50,7 @@ class EmailNotificationStrategy(NotificationStrategy):
         return self._recipients
 
     @recipients.setter
-    def recipients(self, value: list[str]):
+    def recipients(self, value: CommaSeparatedStrings):
         self._recipients = value
 
     @property
@@ -150,7 +152,7 @@ class LineNotificationStrategy(NotificationStrategy):
 
     def _send_system_notify(self, subject: str, notification: Notification, msg: str):
         self.mail_strategy.subject = subject
-        self.mail_strategy.recipients = list(settings.SYSTEM_RECIPIENTS)
+        self.mail_strategy.recipients = CommaSeparatedStrings(settings.SYSTEM_RECIPIENTS)
         self.mail_strategy.send_system_notify(notification.model_copy(update={"message": msg}))
 
         return False
