@@ -6,6 +6,7 @@ from pytest_asyncio import fixture
 
 from app.models.special_holidays import Holiday, HolidayInfo, SpecialHoliday
 from app.utils.open_apis import TaiwanCalendarApi
+from app.utils.datetime import datetime_formatter
 
 
 @fixture
@@ -22,18 +23,28 @@ def mock_api_data():
 
 
 @pytest.mark.asyncio
-async def test_holiday_model():
+async def test_holiday_date_validator():
+    holiday = Holiday(date="2024-01-01", info=HolidayInfo(name="Test", holidaycategory="Test"))
+    assert holiday.date == date(2024, 1, 1)
+
+    holiday = Holiday(date=date(2024, 1, 1), info=HolidayInfo(name="Test", holidaycategory="Test"))
+    assert holiday.date == date(2024, 1, 1)
+
+
+@pytest.mark.asyncio
+async def test_holiday_model(mock_api_data):
     # Arrange
+    d = mock_api_data[0]
     holiday = Holiday(
-        date="2024-01-01",
-        info=HolidayInfo(name="New Year's Day", holidaycategory="National Holiday")
+        date=datetime_formatter(d["date"]),
+        info=HolidayInfo(**d["info"])
     )
 
     # Assert
     assert isinstance(holiday.date, date)
     assert holiday.date == date(2024, 1, 1)
-    assert holiday.info.name == "New Year's Day"
-    assert holiday.info.holiday_category == "National Holiday"
+    assert holiday.info.name == d["info"]["name"]
+    assert holiday.info.holiday_category == d["info"]["holidaycategory"]
 
 
 @pytest.mark.asyncio
@@ -69,12 +80,3 @@ async def test_special_holiday_get_document_by_year(init_db, mocker, mock_api_da
     # Test caching behavior
     second_document = await SpecialHoliday.get_document_by_year(year)
     assert second_document == document
-
-
-@pytest.mark.asyncio
-async def test_holiday_date_validator():
-    holiday = Holiday(date="2024-01-01", info=HolidayInfo(name="Test", holidaycategory="Test"))
-    assert holiday.date == date(2024, 1, 1)
-
-    holiday = Holiday(date=date(2024, 1, 1), info=HolidayInfo(name="Test", holidaycategory="Test"))
-    assert holiday.date == date(2024, 1, 1)
