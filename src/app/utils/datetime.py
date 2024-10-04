@@ -1,10 +1,16 @@
+import platform
 import re
-
 from datetime import datetime, timedelta
+from enum import StrEnum
+
+
+class OsNames(StrEnum):
+    WINDOWS = 'Windows'
+    LINUX = 'Linux'
 
 
 def get_datetime_utc_8():
-    return datetime.now() + timedelta(hours=8)
+    return datetime.now() + timedelta(hours=8) if OsNames(platform.system()) is OsNames.LINUX else datetime.now()
 
 
 def get_date():
