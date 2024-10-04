@@ -11,7 +11,13 @@ from requests import Response
 from structlog import get_logger, BoundLogger
 
 from app.core.config import settings
-from app.core.enums import NotificationCategories, LineApis, NotificationTypes, LogLevel
+from app.core.enums import (
+    NotificationCategories,
+    LineApis,
+    NotificationTypes,
+    LogLevel,
+    LineNotifyErrorMessages,
+)
 from app.models.notifications import Notification
 from app.utils.email_processors import GmailProcessor
 
@@ -138,13 +144,15 @@ class LineNotificationStrategy(NotificationStrategy):
 
             # If the response status code is not 200, send a system notification via email
             if resp.status_code != status.HTTP_200_OK:
-                subject = "Failed to send LINE notification"
+                subject = LineNotifyErrorMessages.SEND_MESSAGE_FAILED
                 msg = f"{subject}: {resp.text}"
                 logger.error(msg)
 
                 return self._send_system_notify(subject, notification, msg)
+
+            return True
         except Exception as e:
-            subject = "An error occurred while sending LINE notification"
+            subject = LineNotifyErrorMessages.ERROR_OCCURRED
             logger.exception(subject)
             msg = f"{subject}: {e}"
 

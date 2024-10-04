@@ -105,3 +105,8 @@ class NotificationTypes(BaseEnum):
 
 class LineApis(BaseEnum):
     NOTIFY = "https://notify-api.line.me/api/notify"
+
+
+class LineNotifyErrorMessages(BaseEnum):
+    SEND_MESSAGE_FAILED = "Failed to send LINE notification"
+    ERROR_OCCURRED = "An error occurred while sending LINE notification"
