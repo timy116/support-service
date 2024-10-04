@@ -1,14 +1,15 @@
-from datetime import datetime, date
+import datetime as dt
+from datetime import datetime
 from uuid import UUID
 
-from beanie import Document, Indexed
+from beanie import Document
 
 from app.core.enums import NotificationCategories, NotificationTypes, LogLevel
-from app.utils.datetime import get_datetime_utc_8
+from app.utils.datetime import get_datetime_utc_8, get_date
 
 
 class Notification(Document):
-    date: Indexed(date)
+    date: dt.date = get_date()
     correlation_id: UUID
     category: NotificationCategories
     type: NotificationTypes
