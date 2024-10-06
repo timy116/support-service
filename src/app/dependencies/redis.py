@@ -26,6 +26,9 @@ class Redis:
     async def get(self, key: str):
         return await self.connection.get(key)
 
+    async def delete(self, key: str):
+        await self.connection.delete(key)
+
 
 async def get_connection(request: Request):
     pool: aioredis.Redis = request.app.state.redis_pool
