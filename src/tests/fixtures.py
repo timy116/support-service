@@ -1,13 +1,15 @@
 import json
 from datetime import datetime
 from os.path import dirname, join, abspath
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, AsyncMock
 
 import pytest
 from beanie import init_beanie
 from mongomock_motor import AsyncMongoMockClient
+from starlette.testclient import TestClient
 
 from app.core.config import Settings
+from app.dependencies.redis import get_redis, Redis
 from app.models import SpecialHoliday, DailyReport, Notification
 
 BASE_DIR = dirname(abspath(__file__))
@@ -53,3 +55,25 @@ def special_holidays():
             for holiday in d['holidays']
         )
     return holidays
+
+
+@pytest.fixture(scope="module")
+@patch("app.main.StaticFiles", new_callable=MagicMock, auto_use=True)
+def test_app(mock_static_files, mock_settings):
+    mock_redis = AsyncMock(spec=Redis)
+
+    async def override_get_redis():
+        return mock_redis
+
+    from app.main import create_app
+    app = create_app()
+    app.dependency_overrides[get_redis] = override_get_redis
+
+    return app, mock_redis
+
+
+@pytest.fixture(scope="module")
+def client(test_app):
+    app, _ = test_app
+
+    return TestClient(app)

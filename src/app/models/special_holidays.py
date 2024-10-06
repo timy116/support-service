@@ -2,7 +2,7 @@ from datetime import date
 from typing import Union
 
 from beanie import Document, Indexed
-from pydantic import field_validator, Field, BaseModel
+from pydantic import field_validator, Field, BaseModel, ConfigDict
 
 from app.models.utils import clean_value
 from app.utils.datetime import datetime_formatter
@@ -13,6 +13,7 @@ class HolidayInfo(BaseModel):
     name: str
     holiday_category: str = Field(..., alias="holidaycategory")
     description: Union[str, None] = None
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class Holiday(BaseModel):
