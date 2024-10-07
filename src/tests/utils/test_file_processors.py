@@ -173,6 +173,7 @@ class TestFruitDailyReportPDFReader:
         assert reader.prev_day_is_holiday == expected
 
     @pytest.mark.parametrize("date,expected_columns", [
+        (datetime(2024, 10, 14), ['產品別', '10/10', '10/11']),
         (datetime(2024, 10, 7), ['產品別', '10/4']),
         (datetime(2024, 10, 3), ['產品別', '10/2']),
         (datetime(2024, 10, 1), ['產品別', '9/28', '9/29', '9/30']),
@@ -185,9 +186,8 @@ class TestFruitDailyReportPDFReader:
 
     @patch('fitz.open')
     def test_fruit_daily_report_pdf_reader_extract_data(self, mock_fitz, special_holidays):
-        # TODO: Add more test cases and more detailed assertions
-
         # Arrange
+        # Case 1: normal case
         date = datetime(2024, 10, 3).date()
         reader = FruitDailyReportPDFReader(date, ProductType.CROPS, special_holidays)
         reader._get_tables_data = Mock(return_value=pd.DataFrame({
@@ -205,3 +205,67 @@ class TestFruitDailyReportPDFReader:
         assert len(result) == 1
         assert result[0]['產品別'] == '香蕉'
         assert result[0]['10/2'] == 11.1
+
+        # Case 2: daily report on Tuesday
+        date = datetime(2024, 10, 1).date()
+        reader = FruitDailyReportPDFReader(date, ProductType.CROPS, special_holidays)
+        reader._get_tables_data = Mock(return_value=pd.DataFrame({
+            '產品別': ['香蕉\n產地價格監控', '檸檬\n產地價格監控'],
+            '產地': ['平均', '平均'],
+            '9/28': ['11.1\n', '22.2\n'],
+            '9/29': ['22.2\n', '33.3\n'],
+            '9/30': ['－', '44.4\n'],
+        }))
+
+        # Act
+        result = reader._extract_data_from_file("test.pdf")
+
+        # Assert
+        assert len(result) == 2
+        assert result[0]['產品別'] == '香蕉'
+        assert result[0]['9/28'] == 11.1
+        assert result[0]['9/29'] == 22.2
+        assert result[0]['9/30'] == 0
+        assert result[1]['產品別'] == '檸檬'
+        assert result[1]['9/28'] == 22.2
+        assert result[1]['9/29'] == 33.3
+        assert result[1]['9/30'] == 44.4
+
+        # Case 3: daily report on Moon Festival
+        date = datetime(2024, 9, 19).date()
+        reader = FruitDailyReportPDFReader(date, ProductType.CROPS, special_holidays)
+        reader._get_tables_data = Mock(return_value=pd.DataFrame({
+            '產品別': ['香蕉\n產地價格監控', '檸檬\n產地價格監控'],
+            '產地': ['平均', '平均'],
+            '9/17': ['11.1\n', '22.2\n'],
+            '9/18': ['22.2\n', '33.3\n'],
+        }))
+
+        # Act
+        result = reader._extract_data_from_file("test.pdf")
+
+        # Assert
+        assert len(result) == 2
+        assert result[0]['產品別'] == '香蕉'
+        assert result[0]['9/17'] == 11.1
+        assert result[0]['9/18'] == 22.2
+        assert result[1]['產品別'] == '檸檬'
+        assert result[1]['9/17'] == 22.2
+        assert result[1]['9/18'] == 33.3
+
+        # Case 4: daily report on Monday
+        date = datetime(2024, 10, 7).date()
+        reader = FruitDailyReportPDFReader(date, ProductType.CROPS, special_holidays)
+        reader._get_tables_data = Mock(return_value=pd.DataFrame({
+            '產品別': ['香蕉\n產地價格監控'],
+            '產地': ['平均'],
+            '10/4': ['11.1\n'],
+        }))
+
+        # Act
+        result = reader._extract_data_from_file("test.pdf")
+
+        # Assert
+        assert len(result) == 1
+        assert result[0]['產品別'] == '香蕉'
+        assert result[0]['10/4'] == 11.1
