@@ -1,3 +1,5 @@
+from unittest.mock import patch, AsyncMock
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -21,6 +23,28 @@ def get_test_data() -> SpecialHoliday:
             )
         ]
     )
+
+
+@pytest.mark.asyncio
+@patch("app.api.v1.endpoints.special_holidays.get_cached_holidays", new_callable=AsyncMock)
+async def test_get_holidays_by_year(mock_get_cached_holidays, test_app, init_db, client: TestClient, get_test_data):
+    # Arrange
+    _, mock_redis = test_app
+    key = await cache_key(get_test_data.year)
+    mock_get_cached_holidays.return_value = get_test_data
+    expected = [get_test_data.holidays[0].model_dump()]
+    expected[0]["date"] = str(expected[0]["date"])
+
+    # Act
+    response = client.get(
+        f"/api/v1/special-holidays/holidays/{get_test_data.year}",
+    )
+
+    # Assert
+    assert response.status_code == 200
+    assert response.json()["total"] == 1
+    assert response.json()["holidays"] == expected
+    assert mock_get_cached_holidays.called_once_with(key, mock_redis, get_test_data.year)
 
 
 @pytest.mark.asyncio
