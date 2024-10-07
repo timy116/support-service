@@ -9,56 +9,10 @@ from app.utils.datetime import get_date, datetime_formatter
 from app.utils.email_processors import GmailProcessor
 
 
-@pytest.fixture
-def test_data() -> list[DailyReport]:
-    date = get_date().replace(month=9, day=11)
-
-    return [
-        DailyReport(
-            date=date,
-            category=Category.AGRICULTURE,
-            supply_type=SupplyType.ORIGIN,
-            product_type=ProductType.CROPS,
-            products=[
-                Product(date=date, product_name="香蕉", average_price=10.0),
-                Product(date=date, product_name="芒果", average_price=15.3)
-            ]
-        ),
-        DailyReport(
-            date=date,
-            category=Category.AGRICULTURE,
-            supply_type=SupplyType.WHOLESALE,
-            product_type=ProductType.CROPS,
-            products=[
-                Product(date=date, product_name="香蕉", average_price=10.0),
-                Product(date=date, product_name="芒果", average_price=15.3)
-            ]
-        ),
-        DailyReport(
-            date=date.replace(day=5),
-            category=Category.FISHERY,
-            supply_type=SupplyType.ORIGIN,
-            product_type=ProductType.SEAFOOD,
-            products=[
-                Product(date=date, product_name="吳郭魚", average_price=30.5),
-            ]
-        ),
-        DailyReport(
-            date=date.replace(day=5),
-            category=Category.FISHERY,
-            supply_type=SupplyType.WHOLESALE,
-            product_type=ProductType.SEAFOOD,
-            products=[
-                Product(date=date, product_name="白蝦", average_price=100.3)
-            ]
-        ),
-    ]
-
-
 @pytest.mark.asyncio
-async def test_insert_single_instance_into_db(init_db, test_data):
+async def test_insert_single_instance_into_db(init_db, mock_daily_reports: list[DailyReport]):
     # Arrange
-    date = test_data[0].date
+    date = mock_daily_reports[0].date
 
     report = DailyReport(
         date=date.replace(day=10),
@@ -79,10 +33,10 @@ async def test_insert_single_instance_into_db(init_db, test_data):
 
 
 @pytest.mark.asyncio
-async def test_read_multi_instances_from_db(init_db, test_data):
+async def test_read_multi_instances_from_db(init_db, mock_daily_reports: list[DailyReport]):
     # Arrange
-    date = test_data[0].date
-    await DailyReport.insert_many(test_data)
+    date = mock_daily_reports[0].date
+    await DailyReport.insert_many(mock_daily_reports)
 
     # Act
     # Case 1: query by specific date
@@ -130,9 +84,9 @@ async def test_read_multi_instances_from_db(init_db, test_data):
 
 
 @pytest.mark.asyncio
-async def test_update_instance_from_db(init_db, test_data):
+async def test_update_instance_from_db(init_db, mock_daily_reports: list[DailyReport]):
     # Arrange
-    await DailyReport.insert_many(test_data)
+    await DailyReport.insert_many(mock_daily_reports)
 
     report = await DailyReport.find_one({
         "category": Category.FISHERY,
@@ -150,9 +104,9 @@ async def test_update_instance_from_db(init_db, test_data):
 
 
 @pytest.mark.asyncio
-async def test_delete_instance_from_db(init_db, test_data):
+async def test_delete_instance_from_db(init_db, mock_daily_reports: list[DailyReport]):
     # Arrange
-    await DailyReport.insert_many(test_data)
+    await DailyReport.insert_many(mock_daily_reports)
 
     report = await DailyReport.find_one({
         "category": Category.FISHERY,

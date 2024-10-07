@@ -9,8 +9,11 @@ from mongomock_motor import AsyncMongoMockClient
 from starlette.testclient import TestClient
 
 from app.core.config import Settings
+from app.core.enums import Category, SupplyType, ProductType
 from app.dependencies.redis import get_redis, Redis
 from app.models import SpecialHoliday, DailyReport, Notification
+from app.models.daily_reports import Product
+from app.utils.datetime import get_date
 
 BASE_DIR = dirname(abspath(__file__))
 
@@ -77,3 +80,49 @@ def client(test_app):
     app, _ = test_app
 
     return TestClient(app)
+
+
+@pytest.fixture
+def mock_daily_reports() -> list[DailyReport]:
+    date = get_date().replace(month=9, day=11)
+
+    return [
+        DailyReport(
+            date=date,
+            category=Category.AGRICULTURE,
+            supply_type=SupplyType.ORIGIN,
+            product_type=ProductType.CROPS,
+            products=[
+                Product(date=date, product_name="香蕉", average_price=10.0),
+                Product(date=date, product_name="芒果", average_price=15.3)
+            ]
+        ),
+        DailyReport(
+            date=date,
+            category=Category.AGRICULTURE,
+            supply_type=SupplyType.WHOLESALE,
+            product_type=ProductType.CROPS,
+            products=[
+                Product(date=date, product_name="香蕉", average_price=10.0),
+                Product(date=date, product_name="芒果", average_price=15.3)
+            ]
+        ),
+        DailyReport(
+            date=date.replace(day=5),
+            category=Category.FISHERY,
+            supply_type=SupplyType.ORIGIN,
+            product_type=ProductType.SEAFOOD,
+            products=[
+                Product(date=date, product_name="吳郭魚", average_price=30.5),
+            ]
+        ),
+        DailyReport(
+            date=date.replace(day=5),
+            category=Category.FISHERY,
+            supply_type=SupplyType.WHOLESALE,
+            product_type=ProductType.SEAFOOD,
+            products=[
+                Product(date=date, product_name="白蝦", average_price=100.3)
+            ]
+        ),
+    ]
