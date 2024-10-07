@@ -65,7 +65,8 @@ async def get_daily_reports(
                 daily_report = await DailyReport.get_fulfilled_instance(mail_processor)
 
                 # Save the daily report to the database after the response is returned
-                background_tasks.add_task(daily_report.save)
+                if daily_report:
+                    background_tasks.add_task(daily_report.save)
             except Exception as e:
                 msg = "Failed to get the daily report from the email"
                 await logger.aexception(msg)
