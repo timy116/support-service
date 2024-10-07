@@ -110,3 +110,8 @@ class LineApis(BaseEnum):
 class LineNotifyErrorMessages(BaseEnum):
     SEND_MESSAGE_FAILED = "Failed to send LINE notification"
     ERROR_OCCURRED = "An error occurred while sending LINE notification"
+
+
+class SpecialHolidayHttpErrors(BaseEnum):
+    YEAR_NOT_EXIST = "The year does not exist."
+    HOLIDAY_ALREADY_EXISTS = "The holiday already exists."

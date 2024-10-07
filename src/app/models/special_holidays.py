@@ -11,7 +11,7 @@ from app.utils.open_apis import TaiwanCalendarApi
 
 class HolidayInfo(BaseModel):
     name: str
-    holiday_category: str = Field(..., alias="holidaycategory")
+    holiday_category: str = Field(..., alias="holidaycategory", serialization_alias="holiday_category")
     description: Union[str, None] = None
     model_config = ConfigDict(populate_by_name=True)
 

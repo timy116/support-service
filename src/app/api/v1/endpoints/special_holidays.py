@@ -7,6 +7,7 @@ from starlette.exceptions import HTTPException
 
 from app import schemas
 from app.api.v1.endpoints.utils import get_cached_holidays
+from app.core.enums import SpecialHolidayHttpErrors
 from app.dependencies.redis import Redis, get_redis
 from app.dependencies.special_holidays import cache_key
 from app.models.special_holidays import Holiday, SpecialHoliday
@@ -35,9 +36,11 @@ async def create_holiday(holiday_in: schemas.HolidayCreate, redis: Annotated[Red
     special_holiday = await SpecialHoliday.find_one(SpecialHoliday.year == holiday.date.year)
 
     if special_holiday is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="The year does not exist.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=SpecialHolidayHttpErrors.YEAR_NOT_EXIST)
     if holiday in special_holiday.holidays:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="The holiday already exists.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=SpecialHolidayHttpErrors.HOLIDAY_ALREADY_EXISTS
+        )
 
     special_holiday.holidays.append(holiday)
     await special_holiday.save()
