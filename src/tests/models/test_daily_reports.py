@@ -1,8 +1,12 @@
+from unittest.mock import MagicMock, patch
+
+import pandas as pd
 import pytest
 
 from app.core.enums import Category, SupplyType, ProductType
 from app.models.daily_reports import DailyReport, Product
-from app.utils.datetime import get_date
+from app.utils.datetime import get_date, datetime_formatter
+from app.utils.email_processors import GmailProcessor
 
 
 @pytest.fixture
@@ -164,3 +168,52 @@ async def test_delete_instance_from_db(init_db, test_data):
 
     # Assert
     assert report is None
+
+
+@pytest.fixture
+def mock_data():
+    return [pd.DataFrame({
+        '產品別': ['香蕉'],
+        '產地': ['平均'],
+        '10/2': [11.1],
+    }).to_dict(orient="records")]
+
+
+@pytest.fixture
+@patch("app.utils.email_processors.GmailProcessor", new_callable=MagicMock(spec=GmailProcessor))
+def mock_mail_processor(mock_mail_processor, mock_data):
+    mock_reader = mock_mail_processor.document_processor.reader
+    mock_mail_processor.process.return_value = mock_data
+    mock_reader.selected_columns = ["產品別", "10/2"]
+    mock_reader.PRODUCT_COLUMN = "產品別"
+    mock_reader.roc_year = 113
+    mock_reader.date = datetime_formatter("20241002")
+    mock_reader.category = Category.AGRICULTURE
+    mock_reader.supply_type = SupplyType.ORIGIN
+    mock_reader.product_type = ProductType.CROPS
+
+    return mock_mail_processor
+
+
+@pytest.mark.asyncio
+async def test_get_fulfilled_instance_returns_correct_instance(mock_mail_processor, init_db):
+    # Act
+    result = await DailyReport.get_fulfilled_instance(mock_mail_processor)
+
+    # Assert
+    assert result is not None
+    assert len(result.products) == 1
+    assert result.products[0].product_name == "香蕉"
+    assert result.products[0].average_price == 11.1
+
+
+@pytest.mark.asyncio
+async def test_get_fulfilled_instance_returns_none(mock_mail_processor):
+    # Arrange
+    mock_mail_processor.process.return_value = []
+
+    # Act
+    result = await DailyReport.get_fulfilled_instance(mock_mail_processor)
+
+    # Assert
+    assert result is None
