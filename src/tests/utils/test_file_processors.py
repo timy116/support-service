@@ -173,10 +173,11 @@ class TestFruitDailyReportPDFReader:
         assert reader.prev_day_is_holiday == expected
 
     @pytest.mark.parametrize("date,expected_columns", [
+        (datetime(2024, 10, 7), ['產品別', '10/4']),
         (datetime(2024, 10, 3), ['產品別', '10/2']),
         (datetime(2024, 10, 1), ['產品別', '9/28', '9/29', '9/30']),
         (datetime(2024, 9, 19), ['產品別', '9/17', '9/18']),
-    ], ids=["Normal", "Tuesday", "Special holiday"])
+    ])
     def test_fruit_daily_report_pdf_reader_selected_columns(self, date, expected_columns, special_holidays):
         reader = FruitDailyReportPDFReader(date.date(), ProductType.FRUIT, special_holidays)
 

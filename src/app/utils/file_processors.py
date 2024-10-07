@@ -192,7 +192,8 @@ class FruitDailyReportPDFReader(DailyReportPDFReader):
     def selected_columns(self) -> list[str]:
         if self._selected_columns is None:
             time_delta = 1
-            product_date = self.date - timedelta(days=1)
+            weekday = WeekDay(self.date.isoweekday())
+            product_date = self.date - timedelta(days=3) if weekday is WeekDay.MONDAY else self.date - timedelta(days=1)
             selected_columns = []
             flag = True
 
