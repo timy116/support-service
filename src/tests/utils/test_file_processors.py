@@ -25,7 +25,7 @@ from app.utils.file_processors import (
 class TestFileReaderFactory:
     def test_file_reader_factory(self):
         date = datetime(2024, 10, 3).date()
-        reader = FileReaderFactory.get_reader(date, FileTypes.PDF, ProductType.FRUIT)
+        reader = FileReaderFactory.get_reader(date, FileTypes.PDF, ProductType.CROPS)
 
         assert isinstance(reader, FruitDailyReportPDFReader)
 
@@ -33,13 +33,13 @@ class TestFileReaderFactory:
         # Arrange
         # Case 1: `ProductType` is `FRUIT`
         date = datetime(2024, 10, 3).date()
-        reader = DailyReportPDFReader.get_daily_report_reader(date, ProductType.FRUIT)
+        reader = DailyReportPDFReader.get_daily_report_reader(date, ProductType.CROPS)
 
         # Assert
         assert isinstance(reader, FruitDailyReportPDFReader)
 
         # Case 2: `ProductType` is `FISH`
-        reader = DailyReportPDFReader.get_daily_report_reader(date, ProductType.FISH)
+        reader = DailyReportPDFReader.get_daily_report_reader(date, ProductType.SEAFOOD)
 
         # Assert
         assert isinstance(reader, FishDailyReportPDFReader)
@@ -56,13 +56,13 @@ class TestDocumentProcessor:
         # Arrange
         # Case 1: `ProductType` is `FRUIT`
         date = datetime(2024, 10, 3).date()
-        processor = DocumentProcessor(date, FileTypes.PDF, ProductType.FRUIT)
+        processor = DocumentProcessor(date, FileTypes.PDF, ProductType.CROPS)
 
         # Assert
         assert isinstance(processor.reader, FruitDailyReportPDFReader)
 
         # Case 2: `ProductType` is `FISH`
-        processor = DocumentProcessor(date, FileTypes.PDF, ProductType.FISH)
+        processor = DocumentProcessor(date, FileTypes.PDF, ProductType.SEAFOOD)
 
         # Assert
         assert isinstance(processor.reader, FishDailyReportPDFReader)
@@ -71,18 +71,18 @@ class TestDocumentProcessor:
 class TestDailyReportMetaInfo:
     def test_daily_report_meta_info(self):
         date = datetime(2024, 10, 3).date()
-        meta_info = DailyReportMetaInfo(date, ProductType.FRUIT)
+        meta_info = DailyReportMetaInfo(date, ProductType.CROPS)
 
         assert meta_info.roc_year == 113
         assert meta_info.date == date
-        assert meta_info.product_type == ProductType.FRUIT
+        assert meta_info.product_type == ProductType.CROPS
 
     def test_daily_reporty_meta_info_get_calculated_report_date(self, special_holidays):
         # Arrange
         # Case 1: 2024-10-01 is Tuesday
         date = datetime(2024, 10, 1).date()
         weekday = WeekDay(date.isoweekday())
-        meta_info = DailyReportMetaInfo(date, ProductType.FRUIT, special_holidays)
+        meta_info = DailyReportMetaInfo(date, ProductType.CROPS, special_holidays)
 
         # Act
         calculated_date = meta_info._get_calculated_report_date(weekday)
@@ -117,10 +117,10 @@ class TestDailyReportMetaInfo:
         # Arrange
         # Case 1: correct filename with `Fruit`
         date = datetime(2024, 10, 3).date()
-        meta_info = DailyReportMetaInfo(date, ProductType.FRUIT, special_holidays)
+        meta_info = DailyReportMetaInfo(date, ProductType.CROPS, special_holidays)
 
         # Assert
-        assert meta_info.filename == DailyReportType.FRUIT.format(
+        assert meta_info.filename == DailyReportType.CROPS.format(
             roc_year=meta_info.roc_year,
             month=str(date.month).zfill(2),
             day=str(date.day).zfill(2)
@@ -129,10 +129,10 @@ class TestDailyReportMetaInfo:
         # Case 2: correct filename with `Fish`
         meta_info._filename = None
         date = datetime(2024, 9, 3).date()
-        meta_info = DailyReportMetaInfo(date, ProductType.FISH, special_holidays)
+        meta_info = DailyReportMetaInfo(date, ProductType.SEAFOOD, special_holidays)
 
         # Assert
-        assert meta_info.filename == DailyReportType.FISHERY.format(
+        assert meta_info.filename == DailyReportType.SEAFOOD.format(
             roc_year=meta_info.roc_year,
             month=str(date.month).zfill(2),
             day=str(date.day).zfill(2)
@@ -158,7 +158,7 @@ class TestDailyReportMetaInfo:
 class TestFruitDailyReportPDFReader:
     def test_fruit_daily_report_pdf_reader(self, special_holidays):
         date = datetime(2024, 10, 3).date()
-        reader = FruitDailyReportPDFReader(date, ProductType.FRUIT, special_holidays)
+        reader = FruitDailyReportPDFReader(date, ProductType.CROPS, special_holidays)
 
         assert reader.supply_type == SupplyType.ORIGIN
         assert reader.category == Category.AGRICULTURE
@@ -169,7 +169,7 @@ class TestFruitDailyReportPDFReader:
         (datetime(2024, 10, 6), True),  # Sunday
     ])
     def test_fruit_daily_report_pdf_reader_prev_day_is_holiday(self, date, expected, special_holidays):
-        reader = FruitDailyReportPDFReader(date.date(), ProductType.FRUIT, special_holidays)
+        reader = FruitDailyReportPDFReader(date.date(), ProductType.CROPS, special_holidays)
         assert reader.prev_day_is_holiday == expected
 
     @pytest.mark.parametrize("date,expected_columns", [
@@ -179,7 +179,7 @@ class TestFruitDailyReportPDFReader:
         (datetime(2024, 9, 19), ['產品別', '9/17', '9/18']),
     ])
     def test_fruit_daily_report_pdf_reader_selected_columns(self, date, expected_columns, special_holidays):
-        reader = FruitDailyReportPDFReader(date.date(), ProductType.FRUIT, special_holidays)
+        reader = FruitDailyReportPDFReader(date.date(), ProductType.CROPS, special_holidays)
 
         assert reader.selected_columns == expected_columns
 
@@ -189,7 +189,7 @@ class TestFruitDailyReportPDFReader:
 
         # Arrange
         date = datetime(2024, 10, 3).date()
-        reader = FruitDailyReportPDFReader(date, ProductType.FRUIT, special_holidays)
+        reader = FruitDailyReportPDFReader(date, ProductType.CROPS, special_holidays)
         reader._get_tables_data = Mock(return_value=pd.DataFrame({
             '產品別': ['香蕉\n產地價格監控'],
             '產地': ['平均'],

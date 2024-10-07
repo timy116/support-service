@@ -76,10 +76,10 @@ class DailyReportMetaInfo:
 
             # The filename of the daily report is different based on the product type.
             filenames = {
-                ProductType.FRUIT: DailyReportType.FRUIT.value.format(
+                ProductType.CROPS: DailyReportType.CROPS.value.format(
                     roc_year=self.roc_year, month=str(report_date.month).zfill(2), day=str(report_date.day).zfill(2)
                 ),
-                ProductType.FISH: DailyReportType.FISHERY.format(
+                ProductType.SEAFOOD: DailyReportType.SEAFOOD.format(
                     roc_year=self.roc_year, month=str(report_date.month).zfill(2), day=str(report_date.day).zfill(2)
                 ),
             }
@@ -148,8 +148,8 @@ class DailyReportPDFReader(PDFReader, DailyReportMetaInfo):
         :return: The daily report reader.
         """
         reader = {
-            ProductType.FRUIT: FruitDailyReportPDFReader(date, product_type, date_of_holidays),
-            ProductType.FISH: FishDailyReportPDFReader(date, product_type, date_of_holidays)
+            ProductType.CROPS: FruitDailyReportPDFReader(date, product_type, date_of_holidays),
+            ProductType.SEAFOOD: FishDailyReportPDFReader(date, product_type, date_of_holidays)
         }
 
         return reader.get(product_type, DailyReportPDFReader(date, product_type))

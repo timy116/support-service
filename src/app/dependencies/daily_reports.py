@@ -26,7 +26,7 @@ async def get_common_params(
         date: Union[str, None] = None,
         supply_type: Union[SupplyType, None] = None,
         category: Union[Category, None] = None,
-        product_type: Union[Literal[ProductType.FRUIT, ProductType.FISH], None] = None,
+        product_type: Union[Literal[ProductType.CROPS, ProductType.SEAFOOD], None] = None,
         extract: bool = False
 ) -> CommonParams:
     try:

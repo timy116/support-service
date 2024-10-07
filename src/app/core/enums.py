@@ -21,6 +21,7 @@ class Category(BaseEnum):
 
 class ProductType(BaseEnum):
     # Agriculture
+    CROPS = "作物"
     RICE = "糧"
     VEGETABLE = "蔬菜"
     FRUIT = "水果"
@@ -34,6 +35,7 @@ class ProductType(BaseEnum):
     GOOSE = "鵝"
 
     # Fishery
+    SEAFOOD = "海鮮"
     FISH = "魚類"
     SHRIMP = "蝦類"
     SHELLFISH = "貝類"
@@ -43,8 +45,8 @@ class ProductType(BaseEnum):
 
 
 class DailyReportType(BaseEnum):
-    FRUIT = "{roc_year}年{month}月{day}日敏感性農產品產地價格日報表"
-    FISHERY = "農業部通報魚價{roc_year}.{month}.{day}"
+    CROPS = "{roc_year}年{month}月{day}日敏感性農產品產地價格日報表"
+    SEAFOOD = "農業部通報魚價{roc_year}.{month}.{day}"
 
 
 class LogLevel(BaseEnum):

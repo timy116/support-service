@@ -14,7 +14,7 @@ def test_data() -> list[DailyReport]:
             date=date,
             category=Category.AGRICULTURE,
             supply_type=SupplyType.ORIGIN,
-            product_type=ProductType.FRUIT,
+            product_type=ProductType.CROPS,
             products=[
                 Product(date=date, product_name="香蕉", average_price=10.0),
                 Product(date=date, product_name="芒果", average_price=15.3)
@@ -24,7 +24,7 @@ def test_data() -> list[DailyReport]:
             date=date,
             category=Category.AGRICULTURE,
             supply_type=SupplyType.WHOLESALE,
-            product_type=ProductType.FRUIT,
+            product_type=ProductType.CROPS,
             products=[
                 Product(date=date, product_name="香蕉", average_price=10.0),
                 Product(date=date, product_name="芒果", average_price=15.3)
@@ -34,7 +34,7 @@ def test_data() -> list[DailyReport]:
             date=date.replace(day=5),
             category=Category.FISHERY,
             supply_type=SupplyType.ORIGIN,
-            product_type=ProductType.FISH,
+            product_type=ProductType.SEAFOOD,
             products=[
                 Product(date=date, product_name="吳郭魚", average_price=30.5),
             ]
@@ -43,7 +43,7 @@ def test_data() -> list[DailyReport]:
             date=date.replace(day=5),
             category=Category.FISHERY,
             supply_type=SupplyType.WHOLESALE,
-            product_type=ProductType.SHRIMP,
+            product_type=ProductType.SEAFOOD,
             products=[
                 Product(date=date, product_name="白蝦", average_price=100.3)
             ]
@@ -60,7 +60,7 @@ async def test_insert_single_instance_into_db(init_db, test_data):
         date=date.replace(day=10),
         category=Category.AGRICULTURE,
         supply_type=SupplyType.ORIGIN,
-        product_type=ProductType.FRUIT,
+        product_type=ProductType.CROPS,
         products=[
             Product(date=date, product_name="香蕉", average_price=10.0),
             Product(date=date, product_name="芒果", average_price=15.3)
@@ -98,7 +98,7 @@ async def test_read_multi_instances_from_db(init_db, test_data):
 
     # Assert
     assert len(reports) == 2
-    assert reports[0].product_type == ProductType.FRUIT
+    assert reports[0].product_type == ProductType.CROPS
 
     # Case 4: query by category and supply type
     reports = await DailyReport.find_many({
