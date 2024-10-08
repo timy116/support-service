@@ -3,7 +3,7 @@ from typing import Union, Literal
 
 from fastapi import HTTPException
 
-from app.core.enums import Category, ProductType, SupplyType
+from app.core.enums import Category, ProductType, SupplyType, DailyReportHttpErrors
 from app.utils.datetime import datetime_formatter
 
 
@@ -36,8 +36,8 @@ async def get_common_params(
 
     if extract:
         if product_type is None:
-            raise HTTPException(status_code=400, detail='product_type is required when extract is set')
+            raise HTTPException(status_code=400, detail=DailyReportHttpErrors.PRODUCT_TYPE_PARAM_IS_REQUIRED)
         if date is None:
-            raise HTTPException(status_code=400, detail='date is required when extract is set')
+            raise HTTPException(status_code=400, detail=DailyReportHttpErrors.DATE_PARAM_IS_REQUIRED)
 
     return CommonParams(cleaned_date, supply_type, category, product_type, extract)

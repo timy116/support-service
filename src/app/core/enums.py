@@ -117,3 +117,10 @@ class LineNotifyErrorMessages(BaseEnum):
 class SpecialHolidayHttpErrors(BaseEnum):
     YEAR_NOT_EXIST = "The year does not exist."
     HOLIDAY_ALREADY_EXISTS = "The holiday already exists."
+
+
+class DailyReportHttpErrors(BaseEnum):
+    PRODUCT_TYPE_PARAM_IS_REQUIRED = "product_type is required when extract is set."
+    DATE_PARAM_IS_REQUIRED = "date is required when extract is set."
+    FAILED = "Failed to get the daily report from the email."
+    INTERNAL_SERVER_ERROR = "Internal server error."

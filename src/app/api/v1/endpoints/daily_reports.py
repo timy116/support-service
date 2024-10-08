@@ -5,11 +5,11 @@ from starlette.exceptions import HTTPException
 from structlog import get_logger
 from structlog.stdlib import BoundLogger
 
-import app.dependencies.notifications
 from app import schemas
 from app.api.v1.endpoints.utils import get_cached_holidays
-from app.core.enums import FileTypes, WeekDay
+from app.core.enums import FileTypes, WeekDay, DailyReportHttpErrors
 from app.dependencies import daily_reports, special_holidays
+from app.dependencies.notifications import get_notification_manager
 from app.dependencies.redis import get_redis, Redis
 from app.middlewares.correlation import correlation_id
 from app.models.daily_reports import DailyReport
@@ -32,7 +32,7 @@ async def get_daily_reports(
         redis: Annotated[Redis, Depends(get_redis)],
         paging: schemas.PaginationParams = Depends(),
         sorting: schemas.SortingParams = Depends(),
-        notification_manager: NotificationManager = Depends(app.dependencies.notifications.get_notification_manager)
+        notification_manager: NotificationManager = Depends(get_notification_manager)
 ):
     _list = await DailyReport.get_by_params(params, paging, sorting)
     cached_holidays = await get_cached_holidays(key, redis, params.date.year if params.date else get_date().year)
@@ -68,12 +68,12 @@ async def get_daily_reports(
                 if daily_report:
                     background_tasks.add_task(daily_report.save)
             except Exception as e:
-                msg = "Failed to get the daily report from the email"
+                msg = str(DailyReportHttpErrors.FAILED)
                 await logger.aexception(msg)
                 notification = await Notification.create_from_exception(correlation_id.get(), msg)
                 notification_manager.send_notification(notification)
 
-                raise HTTPException(status_code=500, detail="Internal server error") from e
+                raise HTTPException(status_code=500, detail=DailyReportHttpErrors.INTERNAL_SERVER_ERROR) from e
         else:
             daily_report = None
 

@@ -99,7 +99,8 @@ class TestLineNotificationStrategy:
     @patch('app.utils.notification_helper.requests.post')
     @patch(
         'app.utils.notification_helper.EmailNotificationStrategy',
-        new_callable=MagicMock(spec=EmailNotificationStrategy)
+        new_callable=MagicMock,
+        spec=EmailNotificationStrategy
     )
     def test_send_failure(self, mock_email_strategy, mock_post, notification, mock_settings):
         # Arrange
@@ -126,7 +127,8 @@ class TestLineNotificationStrategy:
     @patch('app.utils.notification_helper.requests.post')
     @patch(
         'app.utils.notification_helper.EmailNotificationStrategy',
-        new_callable=MagicMock(spec=EmailNotificationStrategy)
+        new_callable=MagicMock,
+        spec=EmailNotificationStrategy
     )
     def test_send_exception(self, mock_email_strategy, mock_post, notification, mock_settings):
         # Arrange
