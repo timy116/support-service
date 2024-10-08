@@ -164,6 +164,8 @@ class TestFruitDailyReportPDFReader:
         assert reader.category == Category.AGRICULTURE
 
     @pytest.mark.parametrize("date,expected", [
+        (datetime(2024, 9, 18), True),  # Moon Festival
+        (datetime(2024, 9, 30), True),  # Monday
         (datetime(2024, 10, 3), False),  # Thursday
         (datetime(2024, 10, 5), True),  # Saturday
         (datetime(2024, 10, 6), True),  # Sunday

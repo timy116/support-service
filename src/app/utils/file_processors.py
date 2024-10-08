@@ -186,6 +186,8 @@ class FruitDailyReportPDFReader(DailyReportPDFReader):
                 weekday is WeekDay.SATURDAY
                 or weekday is WeekDay.SUNDAY
                 or self.date - timedelta(days=1) in self.date_of_holidays
+                or WeekDay((self.date - timedelta(days=1)).isoweekday()) is WeekDay.SATURDAY
+                or WeekDay((self.date - timedelta(days=1)).isoweekday()) is WeekDay.SUNDAY
         )
 
     @property
