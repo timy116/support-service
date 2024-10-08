@@ -3,6 +3,7 @@ from typing import Union
 from pydantic import ConfigDict
 
 from .daily_reports import DailyReport
+from .notifications import Notification
 from .pagination import Paginated, PaginationParams
 from .sorting import SortingParams
 from .special_holidays import HolidayCreate, Holiday
