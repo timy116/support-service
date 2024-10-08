@@ -252,3 +252,43 @@ async def test_get_daily_reports_with_extract_param_and_single_daily_report_inst
     assert response.json()["results"][0]["date"] == daily_report.date.strftime("%Y-%m-%d")
     assert await DailyReport.find_all().count() == 0
     mock_get_fulfilled_instance.assert_not_called()
+
+
+@pytest.mark.asyncio
+@patch("app.api.v1.endpoints.daily_reports.DailyReport.get_fulfilled_instance", new_callable=AsyncMock)
+@patch("app.api.v1.endpoints.daily_reports.DailyReport.get_by_params", new_callable=AsyncMock)
+@patch("app.api.v1.endpoints.daily_reports.get_cached_holidays", new_callable=AsyncMock)
+async def test_get_daily_reports_with_extract_param_and_daily_report_instance_is_none(
+        mock_get_cached_holidays,
+        mock_get_by_params,
+        mock_get_fulfilled_instance,
+        init_db,
+        mock_cached_holidays,
+        client: TestClient
+):
+    # Arrange
+    dt = "20240930"
+    mock_get_cached_holidays.return_value = mock_cached_holidays
+    mock_get_by_params.return_value = []
+    mock_get_fulfilled_instance.return_value = None
+
+    # Act
+    response = client.get(
+        url="/api/v1/daily-reports",
+        params={
+            "date": dt,
+            "product_type": ProductType.CROPS,
+            "extract": True,
+        }
+    )
+
+    # Assert
+    assert response.status_code == 200
+    assert response.json()["page"] == 1
+    assert response.json()["per_page"] == 10
+    assert response.json()["total"] == 0
+    assert response.json()["prev_day_is_holiday"] == True
+    assert response.json()["weekday"] is WeekDay(datetime_formatter(dt).isoweekday()).value
+    assert len(response.json()["results"]) == 0
+    assert response.json()["results"] == []
+    assert await DailyReport.find_all().count() == 0
