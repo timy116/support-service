@@ -1,12 +1,15 @@
 import datetime
-from typing import Union
+from typing import Union, Any
 
 from fastapi import HTTPException
 
+from app import schemas
 from app.core.enums import (
     NotificationTypes,
     LogLevel, NotificationCategories,
 )
+from app.middlewares.correlation import correlation_id
+from app.models import Notification
 from app.utils.datetime import datetime_formatter
 from app.utils.notification_helper import (
     NotificationManager,
@@ -49,3 +52,10 @@ async def get_notification_manager(notification_type: Union[NotificationTypes, N
 
     # The default notification type is LINE
     return NotificationManager(LineNotificationStrategy())
+
+
+async def get_notification_in(notification_in: schemas.NotificationCreate) -> Notification:
+    dump = notification_in.model_dump()
+    dump["correlation_id"] = correlation_id.get()
+
+    return Notification(**dump)

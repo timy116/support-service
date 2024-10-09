@@ -1,7 +1,9 @@
 import datetime
+from typing import Union
 from uuid import UUID
 
-from pydantic import BaseModel
+from isapi.samples.redirector import excludes
+from pydantic import BaseModel, ConfigDict
 
 from app.core.enums import NotificationCategories, NotificationTypes, LogLevel
 
@@ -14,3 +16,11 @@ class Notification(BaseModel):
     level: LogLevel
     message: str
     created_at: datetime.datetime
+
+
+class NotificationCreate(BaseModel):
+    date: datetime.date
+    category: NotificationCategories
+    type: NotificationTypes
+    level: LogLevel
+    message: str
