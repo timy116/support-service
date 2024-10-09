@@ -5,7 +5,6 @@ from uuid import UUID
 from beanie import Document
 
 from app.core.enums import NotificationCategories, NotificationTypes, LogLevel
-from app.dependencies.notifications import CommonParams
 from app.utils.datetime import get_datetime_utc_8, get_date
 
 
@@ -37,7 +36,7 @@ class Notification(Document):
         )
 
     @classmethod
-    async def get_by_params(cls, params: CommonParams, paging, sorting):
+    async def get_by_params(cls, params, paging, sorting):
         result = cls.find_all()
 
         if params.date:

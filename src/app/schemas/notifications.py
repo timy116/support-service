@@ -12,4 +12,5 @@ class Notification(BaseModel):
     category: NotificationCategories
     type: NotificationTypes
     level: LogLevel
-    created_at: datetime
+    message: str
+    created_at: datetime.datetime
