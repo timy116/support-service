@@ -1,10 +1,13 @@
 import datetime
 from typing import Union
 
+from fastapi import HTTPException
+
 from app.core.enums import (
     NotificationTypes,
-    LogLevel,
+    LogLevel, NotificationCategories,
 )
+from app.utils.datetime import datetime_formatter
 from app.utils.notification_helper import (
     NotificationManager,
     LineNotificationStrategy,
@@ -16,7 +19,7 @@ class CommonParams:
     def __init__(
             self,
             date: Union[datetime.date, None] = None,
-            category: Union[NotificationTypes, None] = None,
+            category: Union[NotificationCategories, None] = None,
             type: Union[NotificationTypes, None] = None,
             level: Union[LogLevel, None] = None
     ):
@@ -27,12 +30,17 @@ class CommonParams:
 
 
 async def get_common_params(
-        date: Union[datetime.date, None] = None,
-        category: Union[NotificationTypes, None] = None,
+        date: Union[str, None] = None,
+        category: Union[NotificationCategories, None] = None,
         type: Union[NotificationTypes, None] = None,
         level: Union[LogLevel, None] = None
 ) -> CommonParams:
-    return CommonParams(date, category, type, level)
+    try:
+        cleaned_date = datetime_formatter(date) if date else None
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+    return CommonParams(cleaned_date, category, type, level)
 
 
 async def get_notification_manager(notification_type: Union[NotificationTypes, None] = None) -> NotificationManager:

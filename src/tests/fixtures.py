@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from os.path import dirname, join, abspath
 from unittest.mock import MagicMock, patch, AsyncMock
+from uuid import uuid4
 
 import pytest
 from beanie import init_beanie
@@ -9,11 +10,12 @@ from mongomock_motor import AsyncMongoMockClient
 from starlette.testclient import TestClient
 
 from app.core.config import Settings
-from app.core.enums import Category, SupplyType, ProductType
+from app.core.enums import Category, SupplyType, ProductType, NotificationCategories, NotificationTypes, LogLevel, \
+    DailyReportHttpErrors
 from app.dependencies.redis import get_redis, Redis
 from app.models import SpecialHoliday, DailyReport, Notification
 from app.models.daily_reports import Product
-from app.utils.datetime import get_date
+from app.utils.datetime import get_date, datetime_formatter
 
 BASE_DIR = dirname(abspath(__file__))
 
@@ -124,5 +126,56 @@ def mock_daily_reports() -> list[DailyReport]:
             products=[
                 Product(date=date, product_name="白蝦", average_price=100.3)
             ]
+        ),
+    ]
+
+
+@pytest.fixture
+def mock_notifications() -> list[Notification]:
+    return [
+        Notification(
+            date=datetime_formatter("20241009"),
+            correlation_id=uuid4(),
+            category=NotificationCategories.SYSTEM,
+            type=NotificationTypes.LINE,
+            level=LogLevel.ERROR,
+            message=DailyReportHttpErrors.FAILED.value,
+            created_at=datetime.now()
+        ),
+        Notification(
+            date=datetime_formatter("20241009"),
+            correlation_id=uuid4(),
+            category=NotificationCategories.SYSTEM,
+            type=NotificationTypes.LINE,
+            level=LogLevel.ERROR,
+            message=DailyReportHttpErrors.FAILED.value,
+            created_at=datetime.now()
+        ),
+        Notification(
+            date=datetime_formatter("20241008"),
+            correlation_id=uuid4(),
+            category=NotificationCategories.SYSTEM,
+            type=NotificationTypes.EMAIL,
+            level=LogLevel.ERROR,
+            message=DailyReportHttpErrors.INTERNAL_SERVER_ERROR.value,
+            created_at=datetime.now()
+        ),
+        Notification(
+            date=datetime_formatter("20241007"),
+            correlation_id=uuid4(),
+            category=NotificationCategories.SYSTEM,
+            type=NotificationTypes.EMAIL,
+            level=LogLevel.ERROR,
+            message=DailyReportHttpErrors.INTERNAL_SERVER_ERROR.value,
+            created_at=datetime.now()
+        ),
+        Notification(
+            date=datetime_formatter("20241007"),
+            correlation_id=uuid4(),
+            category=NotificationCategories.SERVICE,
+            type=NotificationTypes.LINE,
+            level=LogLevel.INFO,
+            message="",
+            created_at=datetime.now()
         ),
     ]
