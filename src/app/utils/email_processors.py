@@ -51,6 +51,12 @@ class GmailSearcher(EmailSearcher):
         self.service = service
 
     def search(self, keyword: str, file_type: Union[FileTypes, None] = None) -> List[dict[str, Union[str, bool]]]:
+        raise NotImplementedError('Method search must be implemented')
+
+
+class GmailDailyReportSearcher(GmailSearcher):
+
+    def search(self, keyword: str, file_type: Union[FileTypes, None] = None) -> List[dict[str, Union[str, bool]]]:
         results = self.service.users().messages().list(userId='me', q=keyword).execute()
         messages = results.get('messages', [])
         emails = []
@@ -62,6 +68,10 @@ class GmailSearcher(EmailSearcher):
                 'subject': next(header['value'] for header in msg['payload']['headers'] if header['name'] == 'Subject')
             }
 
+            # Check if the email subject is the same as the keyword
+            if email["subject"] != keyword or email["subject"].find(keyword) == -1:
+                continue
+
             if file_type is not None:
                 email['has_file'] = any(
                     part['filename'].lower().endswith(f'.{file_type}')
@@ -71,24 +81,9 @@ class GmailSearcher(EmailSearcher):
 
             emails.append(email)
 
-        return emails
-
-
-class GmailDailyReportSearcher(GmailSearcher):
-
-    def search(self, keyword: str, file_type: Union[FileTypes, None] = None) -> List[dict[str, Union[str, bool]]]:
-        emails = super().search(keyword, file_type)
-
-        if len(emails) > 1:
-            filtered_emails = []
-
-            for email in emails:
-                subject = email['subject']
-
-                if subject == keyword or subject.find(keyword) != -1:
-                    filtered_emails.append(email)
-
-            return filtered_emails
+            # If the search is for a daily report, only the first email is needed
+            if len(emails) == 1:
+                break
 
         return emails
 
