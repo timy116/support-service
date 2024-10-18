@@ -3,16 +3,8 @@ from unittest.mock import Mock, patch, mock_open, PropertyMock, MagicMock
 import pytest
 from google.oauth2.credentials import Credentials
 
-from app.utils.email_processors import GmailProcessor, SCOPES
-
-
-@pytest.fixture
-@patch('app.utils.email_processors.GmailProcessor', new_callable=MagicMock, spec=GmailProcessor)
-def mock_mail_processor(mock_mail_processor: MagicMock):
-    # Arrange
-    mock_mail_processor_instance = mock_mail_processor.return_value
-
-    return mock_mail_processor
+from app.core.enums import FileTypes
+from app.utils.email_processors import GmailProcessor, SCOPES, GmailDailyReportSearcher
 
 
 class TestGmailProcessor:
@@ -128,6 +120,23 @@ class TestGmailProcessor:
         mock_flow.run_local_server.assert_called_once_with(port=0)
         mock_build.assert_called_once_with('gmail', 'v1', credentials=mock_new_creds)
 
-    def test_mail_searcher(self, mock_mail_processor):
+
+class TestGmailSearcher:
+    @patch('app.utils.email_processors.Resource', new_callable=MagicMock)
+    def test_mail_searcher(self, mock_resource, mock_messages, mock_message):
         # Arrange
-        processor = mock_mail_processor
+        keyword = 'keyword'
+        message = mock_messages['messages'][0]
+        mock_resource.users().messages().list.return_value.execute.return_value = mock_messages
+        mock_resource.users().messages().get.return_value.execute.return_value = mock_message
+        searcher = GmailDailyReportSearcher(mock_resource)
+
+        # Act
+        result = searcher.search(keyword, FileTypes.PDF)
+
+        # Assert
+        assert len(result) == 1
+        assert result[0]["id"] == message["id"]
+        assert result[0]["subject"] == mock_message["payload"]["headers"][0]["value"]
+        mock_resource.users().messages().list.assert_called_once_with(userId='me', q=keyword)
+        mock_resource.users().messages().get.assert_called_once_with(userId='me', id=message['id'])

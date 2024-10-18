@@ -1,6 +1,8 @@
+import hashlib
 import json
 from datetime import datetime
 from os.path import dirname, join, abspath
+from typing import Any
 from unittest.mock import MagicMock, patch, AsyncMock
 from uuid import uuid4
 
@@ -179,3 +181,43 @@ def mock_notifications() -> list[Notification]:
             created_at=datetime.now()
         ),
     ]
+
+
+@pytest.fixture
+def mock_messages() -> dict[str, list[dict[str, str]]]:
+    return {
+        "messages": [
+            {"id": hashlib.md5(bytes(str(i), encoding="utf8")).hexdigest()[:16]} for i in range(10)
+        ]
+    }
+
+
+@pytest.fixture
+def mock_message() -> dict[str, Any]:
+    return {
+        "historyId": "123456",
+        "id": hashlib.md5(bytes(str(0), encoding="utf8")).hexdigest()[:16],
+        "internalDate": "1728432508000",
+        "labelIds": [
+            "UNREAD",
+            "CATEGORY_PERSONAL",
+            "INBOX"
+        ],
+        "payload": {
+            "mimeType": "multipart/mixed",
+            "partId": "",
+            "headers": [
+                {
+                    "name": "Subject",
+                    "value": "keyword"
+                }
+            ],
+            "parts": [
+                {
+                    "filename": "file.pdf",
+                    "mimeType": "application/pdf",
+                    "partId": "1"
+                }
+            ]
+        }
+    }
