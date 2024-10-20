@@ -7,6 +7,7 @@ from enum import StrEnum
 class OsNames(StrEnum):
     WINDOWS = 'Windows'
     LINUX = 'Linux'
+    MACOS = 'Darwin'
 
 
 def get_datetime_utc_8():
