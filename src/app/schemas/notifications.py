@@ -1,9 +1,7 @@
 import datetime
-from typing import Union
 from uuid import UUID
 
-from isapi.samples.redirector import excludes
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 from app.core.enums import NotificationCategories, NotificationTypes, LogLevel
 
