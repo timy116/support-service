@@ -13,6 +13,9 @@ redis
 structlog
 asgi-correlation-id
 rich
+beautifulsoup4
+selenium
+openpyxl
 
 # test requirements
 pytest
