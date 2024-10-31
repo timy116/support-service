@@ -8,11 +8,13 @@ ENV PYTHONFAULTHANDLER=1 \
     PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
     PIP_DEFAULT_TIMEOUT=100 \
-    STATIC_DIR=app/static
+    STATIC_DIR=app/static \
+    TZ=Asia/Taipei
 
 RUN apt-get update \
     && apt-get install -y gettext libgettextpo-dev tesseract-ocr \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 WORKDIR /code
 

@@ -11,11 +11,11 @@ class OsNames(StrEnum):
 
 
 def get_datetime_utc_8():
-    return datetime.now() + timedelta(hours=8) if OsNames(platform.system()) is OsNames.LINUX else datetime.now()
+    return datetime.now() + timedelta(hours=8) if OsNames(platform.system()) in OsNames.LINUX else datetime.now()
 
 
 def get_date():
-    return get_datetime_utc_8().date()
+    return datetime.now().date()
 
 
 def datetime_formatter(datetime_str: str):

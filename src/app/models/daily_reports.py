@@ -8,7 +8,7 @@ from pymongo.client_session import ClientSession
 
 from app.core.enums import Category, SupplyType, ProductType
 from app.dependencies.daily_reports import CommonParams
-from app.utils.datetime import get_datetime_utc_8, datetime_formatter
+from app.utils.datetime import datetime_formatter
 from app.utils.email_processors import GmailProcessor
 from app.utils.file_processors import FruitDailyReportPDFReader
 
@@ -25,7 +25,7 @@ class DailyReport(Document):
     supply_type: SupplyType
     product_type: ProductType
     products: list[Product]
-    created_at: datetime = get_datetime_utc_8()
+    created_at: datetime = datetime.now()
     updated_at: Optional[datetime] = None
 
     class Settings:
@@ -34,7 +34,7 @@ class DailyReport(Document):
 
     async def save(self: DocType, session: Optional[ClientSession] = None,
                    link_rule: WriteRules = WriteRules.DO_NOTHING, ignore_revision: bool = False, **kwargs) -> DocType:
-        self.updated_at = get_datetime_utc_8()
+        self.updated_at = datetime.now()
         return await super().save(session, link_rule, ignore_revision, **kwargs)
 
     @classmethod

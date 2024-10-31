@@ -5,7 +5,7 @@ from uuid import UUID
 from beanie import Document
 
 from app.core.enums import NotificationCategories, NotificationTypes, LogLevel
-from app.utils.datetime import get_datetime_utc_8, get_date
+from app.utils.datetime import get_date
 
 
 class Notification(Document):
@@ -15,7 +15,7 @@ class Notification(Document):
     type: NotificationTypes
     level: LogLevel
     message: str
-    created_at: datetime = get_datetime_utc_8()
+    created_at: datetime = datetime.now()
 
     class Settings:
         name = "notifications"
