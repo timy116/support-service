@@ -1,5 +1,5 @@
 from enum import Enum, IntEnum, auto
-from typing import Literal
+from typing import List, Any
 
 
 class BaseEnum(str, Enum):
@@ -66,7 +66,7 @@ class FileTypes(BaseEnum):
 
 
 class GmailScopes(BaseEnum):
-    READ_ONLY= "https://www.googleapis.com/auth/gmail.readonly"
+    READ_ONLY = "https://www.googleapis.com/auth/gmail.readonly"
     SEND = "https://www.googleapis.com/auth/gmail.send"
     MODIFY = "https://www.googleapis.com/auth/gmail.modify"
     FULL = "https://mail.google.com/"
@@ -124,3 +124,63 @@ class DailyReportHttpErrors(BaseEnum):
     DATE_PARAM_IS_REQUIRED = "date is required when extract is set."
     FAILED = "Failed to get the daily report from the email."
     INTERNAL_SERVER_ERROR = "Internal server error."
+
+
+class ChromeOptionFlag(BaseEnum):
+    """
+    Chrome option flags for the ChromeOptions class.
+    """
+
+    HEADLESS = "--headless"
+    NO_SANDBOX = "--no-sandbox"
+    DISABLE_GPU = "--disable-gpu"
+    DISABLE_DEV_SHM = "--disable-dev-shm-usage"
+    DISABLE_NOTIFICATIONS = "--disable-notifications"
+    DISABLE_INFOBARS = "--disable-infobars"
+    WINDOW_SIZE_1920_1080 = "--window-size=1920,1080"
+    INCOGNITO = "--incognito"
+
+    @classmethod
+    def get_default_options(cls) -> List[str]:
+        """
+        Get the default Chrome options.
+        """
+
+        return [
+            cls.HEADLESS.value,
+            cls.NO_SANDBOX.value,
+            cls.DISABLE_GPU.value,
+            cls.DISABLE_DEV_SHM.value
+        ]
+
+
+class ChromePreferences(Enum):
+    """
+    Chrome preferences for the ChromeOptions class.
+    """
+
+    DISABLE_IMAGES = ("profile.managed_default_content_settings.images", 2)
+    DISABLE_JAVASCRIPT = ("profile.managed_default_content_settings.javascript", 2)
+    DISABLE_COOKIES = ("profile.default_content_settings.cookies", 2)
+    DISABLE_PLUGINS = ("profile.default_content_settings.plugins", 2)
+
+    def __init__(self, key: str, value: Any):
+        self._key = key
+        self._value = value
+
+    @property
+    def key(self) -> str:
+        return self._key
+
+    @property
+    def value(self) -> Any:
+        return self._value
+
+
+class ScrappedWebPages(BaseEnum):
+    NATIONAL_STATISTICS = ("https://www.stat.gov.tw/News_NoticeCalendar.aspx?"
+                          "n=3717&IsControl=0"
+                          "&_Hide=1&Dept=A19000000G"
+                          "&PageSize=100"
+                          "&year={year}"
+                          "&month=1")
